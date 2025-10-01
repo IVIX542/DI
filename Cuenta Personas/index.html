@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="img/medidor-de-electricidad.png" type="image/x-icon">
+    <title>Contador Material Design</title>
+    <!-- Configuración de Tailwind CSS para usar la clase 'dark' en el contenedor principal -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class', 
+        }
+    </script>
+    <!-- Incluyendo Tailwind CSS para el diseño y la responsividad -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Fuente Inter de Google para un estilo limpio y moderno (Material Design) */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        
+        /* Estilos base del cuerpo */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9; /* Fondo claro (slate-100) */
+            display: flex;
+            flex-direction: column; /* Cambiado a columna para el footer */
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            transition: background-color 0.3s ease; /* Transición suave para el fondo */
+        }
+
+        /* Estilo para el modo oscuro del body (se añade con JS) */
+        body.dark-mode {
+            background-color: #1e293b; /* Fondo oscuro (slate-800) */
+        }
+
+        /* Estilo para el botón de incrementar/decrementar, asegurando una animación fluida */
+        .btn-action {
+            transition: all 0.2s ease-in-out;
+            transform: scale(1);
+            user-select: none; /* Evita que se seleccione el texto */
+            -webkit-tap-highlight-color: transparent; /* Mejora la experiencia táctil */
+        }
+        
+        /* Efecto de 'presionar' (active state) - Sombra forzada para el efecto de hundimiento */
+        .btn-action:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1), 0 1px 2px -2px rgba(0, 0, 0, 0.08);
+        }
+        
+        /* Animación para el número al cambiar */
+        .count-display.animate-change {
+            animation: pulse-scale 0.2s ease-in-out;
+        }
+
+        @keyframes pulse-scale {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.03); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* --- Estilos del Switch de Tema --- */
+
+        /* Mover el círculo (dot) cuando el checkbox está marcado */
+        #theme-toggle:checked ~ .dot {
+            transform: translateX(24px); 
+        }
+
+        /* Cambiar el color del fondo del switch cuando está activo */
+        #theme-toggle:checked + .toggle-bg {
+            background-color: #4f46e5; /* Indigo-600: color activo */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Contenedor Principal de la Aplicación (Tarjeta) -->
+    <!-- Clases dark:bg-slate-800 (fondo oscuro) y bg-white (fondo claro) están definidas. -->
+    <div id="counter-app" class="bg-white dark:bg-slate-800 p-6 sm:p-10 rounded-3xl shadow-2xl w-full max-w-sm text-center transform transition duration-300 hover:shadow-3xl dark:text-gray-50">
+        
+        <!-- Interruptor de Modo Oscuro -->
+        <div class="flex justify-end mb-4">
+            <label for="theme-toggle" class="flex items-center cursor-pointer">
+                <!-- Icono de Sol -->
+                <span class="text-yellow-500 mr-2 text-xl transition-opacity duration-300" id="sun-icon">☀️</span>
+                
+                <!-- Contenedor del Switch -->
+                <div class="relative w-14 h-8">
+                    <!-- Checkbox invisible que maneja el estado -->
+                    <input type="checkbox" id="theme-toggle" class="sr-only">
+                    <!-- Pista/fondo del switch -->
+                    <div class="toggle-bg block w-full h-full rounded-full transition-colors duration-300 ease-in-out bg-gray-300 dark:bg-gray-600"></div>
+                    <!-- Círculo del switch (selector) -->
+                    <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition transform duration-300 shadow"></div>
+                </div>
+
+                <!-- Icono de Luna -->
+                <span class="text-blue-300 ml-2 text-xl transition-opacity duration-300" id="moon-icon">🌙</span>
+            </label>
+        </div>
+
+        <!-- Encabezado -->
+        <h1 class="text-3xl font-extrabold mb-8 text-indigo-700 dark:text-indigo-400">
+            Contador de Flujo
+        </h1>
+
+        <!-- Texto de Etiqueta -->
+        <p class="text-lg text-gray-600 dark:text-gray-300 mb-4 font-medium">
+            Personas Registradas:
+        </p>
+
+        <!-- Display del Contador -->
+        <div class="mb-10">
+            <!-- El color del texto del contador ahora se adapta al modo oscuro -->
+            <span id="count-display" class="count-display text-8xl font-black text-gray-900 dark:text-white leading-none transition-transform duration-200 block">
+                0
+            </span>
+        </div>
+
+        <!-- Botones de Acción (+ y -) -->
+        <div class="flex justify-center gap-4 mb-6">
+            <!-- Botón Decrementar (-) -->
+            <button id="btn-decrement" class="btn-action w-20 h-20 rounded-full bg-red-500 hover:bg-red-600 text-white font-bold text-4xl flex items-center justify-center shadow-md hover:shadow-lg">
+                -
+            </button>
+            
+            <!-- Botón Incrementar (+) -->
+            <button id="btn-increment" class="btn-action w-20 h-20 rounded-full bg-green-500 hover:bg-green-600 text-white font-bold text-4xl flex items-center justify-center shadow-md hover:shadow-lg">
+                +
+            </button>
+        </div>
+        
+        <!-- Botón de Reset -->
+        <button id="btn-reset" class="btn-action w-full py-3 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-semibold text-lg uppercase tracking-wider mt-4 shadow-md hover:shadow-lg">
+            Reiniciar a Cero
+        </button>
+
+    </div>
+
+    <!-- Footer - fuera de la tarjeta principal -->
+    <footer class="mt-8 text-sm text-gray-500 dark:text-gray-400 transition-colors duration-300">
+        © 2025 Desarrollado por Iván López Benítez
+    </footer>
+
+    <script>
+        // Variables globales
+        let count = 0;
+        const body = document.body;
+        const counterApp = document.getElementById('counter-app');
+        const countDisplay = document.getElementById('count-display');
+        const btnIncrement = document.getElementById('btn-increment');
+        const btnDecrement = document.getElementById('btn-decrement');
+        const btnReset = document.getElementById('btn-reset');
+        const themeToggle = document.getElementById('theme-toggle');
+
+        // Función para aplicar el tema y actualizar la interfaz
+        function applyTheme(isDark) {
+            if (isDark) {
+                // Modo Oscuro
+                body.classList.add('dark-mode');
+                counterApp.classList.add('dark'); // Añade la clase 'dark' que activa los estilos Tailwind
+                themeToggle.checked = true;
+                localStorage.setItem('theme', 'dark');
+            } else {
+                // Modo Claro
+                body.classList.remove('dark-mode');
+                counterApp.classList.remove('dark'); // Elimina la clase 'dark', permitiendo que 'bg-white' se aplique
+                themeToggle.checked = false;
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Cargar el tema desde localStorage o usar la preferencia del sistema al inicio
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            // Si hay un tema guardado, úsalo. Si no, usa la preferencia del sistema.
+            const isDark = savedTheme ? savedTheme === 'dark' : prefersDark;
+            
+            applyTheme(isDark);
+        }
+
+        // Función para actualizar el contador en la UI con animación
+        function updateCount(newCount) {
+            // Asegura que el contador nunca sea negativo
+            if (newCount < 0) {
+                newCount = 0;
+            }
+
+            count = newCount;
+            
+            // 1. Agregar clase de animación
+            countDisplay.classList.add('animate-change');
+            
+            // 2. Actualizar el valor
+            countDisplay.textContent = count;
+
+            // 3. Eliminar la clase después de que termine la animación
+            setTimeout(() => {
+                countDisplay.classList.remove('animate-change');
+            }, 250); 
+
+            // Manejo del estado del botón de decremento (incluyendo reactividad al estado deshabilitado)
+            const isDisabled = count === 0;
+            btnDecrement.disabled = isDisabled;
+            
+            // Añadir/quitar estilos para el estado deshabilitado (opacidad y remoción de sombra)
+            btnDecrement.classList.toggle('opacity-50', isDisabled);
+            btnDecrement.classList.toggle('cursor-not-allowed', isDisabled);
+            
+            // Remueve la sombra cuando está deshabilitado para hacerlo plano (Material Design inactivo)
+            btnDecrement.classList.toggle('shadow-md', !isDisabled);
+            btnDecrement.classList.toggle('shadow-none', isDisabled);
+            btnDecrement.classList.toggle('hover:shadow-lg', !isDisabled); 
+        }
+
+        // --- Manejadores de Eventos ---
+
+        // Incrementar
+        btnIncrement.addEventListener('click', () => {
+            updateCount(count + 1);
+        });
+
+        // Decrementar
+        btnDecrement.addEventListener('click', () => {
+            updateCount(count - 1);
+        });
+
+        // Reset
+        btnReset.addEventListener('click', () => {
+            updateCount(0);
+        });
+
+        // Cambio de Tema
+        themeToggle.addEventListener('change', (e) => {
+            applyTheme(e.target.checked);
+        });
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTheme();    // Carga el tema primero para evitar un flash
+            updateCount(0); // Inicializa el contador
+        });
+
+    </script>
+
+</body>
+</html>

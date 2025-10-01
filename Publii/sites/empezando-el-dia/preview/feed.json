@@ -1,0 +1,69 @@
+{
+    "version": "https://jsonfeed.org/version/1",
+    "title": "Empezando el día",
+    "description": "",
+    "home_page_url": "file:///C:\Users\razon\OneDrive\OneNote\2ºDAM\DI\Publii\sites\empezando-el-dia\preview",
+    "feed_url": "file:///C:\Users\razon\OneDrive\OneNote\2ºDAM\DI\Publii\sites\empezando-el-dia\preview/feed.json",
+    "user_comment": "",
+    "author": {
+        "name": "Iván López Benítez"
+    },
+    "items": [
+        {
+            "id": "file:///C:\Users\razon\OneDrive\OneNote\2ºDAM\DI\Publii\sites\empezando-el-dia\preview/22092025/index.html",
+            "url": "file:///C:\Users\razon\OneDrive\OneNote\2ºDAM\DI\Publii\sites\empezando-el-dia\preview/22092025/index.html",
+            "title": "22/09/2025",
+            "summary": "Buenos días!! Cómo estáis hoy? Yo genial 😊 Hoy es el primer&hellip;",
+            "content_html": "<p><strong>Buenos días!!</strong> Cómo estáis hoy? Yo genial 😊</p>\n<p>Hoy es el primer día que hago este blog, por lo que no sé muy bien qué poner.</p>\n<p>¿Me podéis dar ideas en la sección de comentarios? Os lo agradecería mucho.</p>\n<p>Bueno, hasta mañana amigos!!</p>",
+            "author": {
+                "name": "Iván López Benítez"
+            },
+            "tags": [
+            ],
+            "date_published": "2025-09-25T20:15:56+02:00",
+            "date_modified": "2025-09-25T20:15:56+02:00"
+        },
+        {
+            "id": "file:///C:\Users\razon\OneDrive\OneNote\2ºDAM\DI\Publii\sites\empezando-el-dia\preview/23092025/index.html",
+            "url": "file:///C:\Users\razon\OneDrive\OneNote\2ºDAM\DI\Publii\sites\empezando-el-dia\preview/23092025/index.html",
+            "title": "23/09/2025",
+            "summary": "Buenos días!! Hoy amanecí feliz!! No tengo absolutamente nada que hacer para&hellip;",
+            "content_html": "<p><strong>Buenos días!!</strong></p>\n<figure class=\"post__image\"><img loading=\"lazy\"  src=\"https://static.vecteezy.com/system/resources/previews/019/617/293/original/sun-cartoon-symbol-png.png\" alt=\"\" width=\"253\" height=\"253\" data-is-external-image=\"true\"></figure>\n<p>Hoy amanecí feliz!! No tengo absolutamente nada que hacer para la escuela, por lo que... <strong>puedo jugar toda la mañana!!</strong></p>\n<p>Asique, como digo siempre: <strong>Hasta mañana!!</strong></p>",
+            "author": {
+                "name": "Iván López Benítez"
+            },
+            "tags": [
+            ],
+            "date_published": "2025-09-25T20:13:17+02:00",
+            "date_modified": "2025-09-25T20:13:17+02:00"
+        },
+        {
+            "id": "file:///C:\Users\razon\OneDrive\OneNote\2ºDAM\DI\Publii\sites\empezando-el-dia\preview/24092025/index.html",
+            "url": "file:///C:\Users\razon\OneDrive\OneNote\2ºDAM\DI\Publii\sites\empezando-el-dia\preview/24092025/index.html",
+            "title": "24/09/2025",
+            "summary": "Buenos días querido blog. Esta vez me he resfriado por dormir con&hellip;",
+            "content_html": "<p>Buenos días querido blog.</p>\n<p>Esta vez me he resfriado por dormir con la ventana abierta, cosa que sólo deberías hacer en verano.</p>\n<p>Ahora estoy esperando a poder hacerme <strong>mi</strong> café de las 9:10, así podré realizar mis actividades diarias sin dormirme por el camino.</p>\n<p>Luego haré las tareas que me mandaron para esta tarde.</p>\n<p>Hasta mañana!</p>",
+            "author": {
+                "name": "Iván López Benítez"
+            },
+            "tags": [
+            ],
+            "date_published": "2025-09-25T20:07:28+02:00",
+            "date_modified": "2025-09-25T20:07:28+02:00"
+        },
+        {
+            "id": "file:///C:\Users\razon\OneDrive\OneNote\2ºDAM\DI\Publii\sites\empezando-el-dia\preview/25092025/index.html",
+            "url": "file:///C:\Users\razon\OneDrive\OneNote\2ºDAM\DI\Publii\sites\empezando-el-dia\preview/25092025/index.html",
+            "title": "25/09/2025",
+            "summary": "Hoy empezaron unas obras en mi casa. Llevo despierto desde las 8&hellip;",
+            "content_html": "<p>Hoy empezaron unas obras en mi casa. Llevo despierto desde las 8 de la mañana, y eso que estudio de tarde.</p>\n<p>También he podido seguir con los resúmenes que tengo pendientes de algunas asignaturas (gracias a Notebook LM).</p>\n<p>He estado haciendo los resúmenes mientras veía un canal de la TV (AXN). Suelo hacer 2 cosas a la vez para no distrarme.</p>",
+            "author": {
+                "name": "Iván López Benítez"
+            },
+            "tags": [
+            ],
+            "date_published": "2025-09-25T20:04:09+02:00",
+            "date_modified": "2025-09-25T20:04:09+02:00"
+        }
+    ]
+}

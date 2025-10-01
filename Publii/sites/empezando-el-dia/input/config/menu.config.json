@@ -1,0 +1,87 @@
+[
+    {
+        "name": "Mi día",
+        "position": "mainMenu",
+        "items": [
+            {
+                "id": 1758877356167,
+                "label": "Empezando el Día",
+                "title": "EmpezandoDia",
+                "type": "page",
+                "target": "_self",
+                "rel": "",
+                "link": 1,
+                "cssClass": "",
+                "isHidden": false,
+                "items": []
+            },
+            {
+                "id": 1758876120105,
+                "label": "Acabando El Día",
+                "title": "Acabando el día",
+                "type": "page",
+                "target": "_self",
+                "rel": "",
+                "link": 6,
+                "cssClass": "",
+                "isHidden": false,
+                "items": []
+            }
+        ],
+        "maxLevels": "-1"
+    },
+    {
+        "name": "Días",
+        "position": "",
+        "items": [
+            {
+                "id": 1758879155545,
+                "label": "22/09/2025",
+                "title": "22092025",
+                "type": "post",
+                "target": "_self",
+                "rel": "",
+                "link": 5,
+                "cssClass": "",
+                "isHidden": false,
+                "items": []
+            },
+            {
+                "id": 1758879209333,
+                "label": "23/09/2025",
+                "title": "",
+                "type": "post",
+                "target": "_self",
+                "rel": "",
+                "link": 4,
+                "cssClass": "",
+                "isHidden": false,
+                "items": []
+            },
+            {
+                "id": 1758879246893,
+                "label": "24/09/2025",
+                "title": "",
+                "type": "post",
+                "target": "_self",
+                "rel": "",
+                "link": 3,
+                "cssClass": "",
+                "isHidden": false,
+                "items": []
+            },
+            {
+                "id": 1758879261340,
+                "label": "25/09/2025",
+                "title": "",
+                "type": "post",
+                "target": "_self",
+                "rel": "",
+                "link": 2,
+                "cssClass": "",
+                "isHidden": false,
+                "items": []
+            }
+        ]
+    }
+]

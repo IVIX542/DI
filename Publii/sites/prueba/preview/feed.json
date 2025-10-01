@@ -1,0 +1,27 @@
+{
+    "version": "https://jsonfeed.org/version/1",
+    "title": "Prueba",
+    "description": "",
+    "home_page_url": "file:///C:\Users\razon\OneDrive\OneNote\Publii\sites\prueba\preview",
+    "feed_url": "file:///C:\Users\razon\OneDrive\OneNote\Publii\sites\prueba\preview/feed.json",
+    "user_comment": "",
+    "author": {
+        "name": "Iván López"
+    },
+    "items": [
+        {
+            "id": "file:///C:\Users\razon\OneDrive\OneNote\Publii\sites\prueba\preview/primer-post.html",
+            "url": "file:///C:\Users\razon\OneDrive\OneNote\Publii\sites\prueba\preview/primer-post.html",
+            "title": "primer post",
+            "summary": "Este es mi post",
+            "content_html": "<p>Este es mi post</p>\n<p><img loading=\"lazy\" src=\"https://www.bing.com/th?id=OPEC.JaBY6BxWuGFwpw474C474&amp;o=5&amp;pid=21.1&amp;w=128&amp;h=128&amp;qlt=100&amp;dpr=1,3&amp;o=2&amp;bw=6&amp;bc=FFFFFF\" alt=\"Outech IATA Apolo Transportín Para Perros Y Gatos\" data-is-external-image=\"true\"></p>",
+            "author": {
+                "name": "Iván López"
+            },
+            "tags": [
+            ],
+            "date_published": "2025-09-19T20:11:37+02:00",
+            "date_modified": "2025-09-19T20:11:37+02:00"
+        }
+    ]
+}

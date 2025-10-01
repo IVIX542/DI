@@ -1,0 +1,21 @@
+[
+    {
+        "name": "Principal",
+        "position": "mainMenu",
+        "items": [
+            {
+                "id": 1758305366028,
+                "label": "Inicio",
+                "title": "Inicio",
+                "type": "page",
+                "target": "_self",
+                "rel": "",
+                "link": 1,
+                "cssClass": "",
+                "isHidden": false,
+                "items": []
+            }
+        ],
+        "maxLevels": "-1"
+    }
+]

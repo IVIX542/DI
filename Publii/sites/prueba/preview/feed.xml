@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
+    <title>Prueba</title>
+    <link href="file:///C:\Users\razon\OneDrive\OneNote\Publii\sites\prueba\preview/feed.xml" rel="self" />
+    <link href="file:///C:\Users\razon\OneDrive\OneNote\Publii\sites\prueba\preview" />
+    <updated>2025-09-19T20:11:37+02:00</updated>
+    <author>
+        <name>Iván López</name>
+    </author>
+    <id>file:///C:\Users\razon\OneDrive\OneNote\Publii\sites\prueba\preview</id>
+
+    <entry>
+        <title>primer post</title>
+        <author>
+            <name>Iván López</name>
+        </author>
+        <link href="file:///C:\Users\razon\OneDrive\OneNote\Publii\sites\prueba\preview/primer-post.html"/>
+        <id>file:///C:\Users\razon\OneDrive\OneNote\Publii\sites\prueba\preview/primer-post.html</id>
+
+        <updated>2025-09-19T20:11:37+02:00</updated>
+            <summary>
+                <![CDATA[
+                    Este es mi post
+                ]]>
+            </summary>
+        <content type="html">
+            <![CDATA[
+                <p>Este es mi post</p>
+<p><img loading="lazy" src="https://www.bing.com/th?id=OPEC.JaBY6BxWuGFwpw474C474&amp;o=5&amp;pid=21.1&amp;w=128&amp;h=128&amp;qlt=100&amp;dpr=1,3&amp;o=2&amp;bw=6&amp;bc=FFFFFF" alt="Outech IATA Apolo Transportín Para Perros Y Gatos" data-is-external-image="true"></p>
+            ]]>
+        </content>
+    </entry>
+</feed>

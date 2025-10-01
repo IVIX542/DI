@@ -1,0 +1,3 @@
+User-agent: *
+Disallow:
+Sitemap: https://ivix542.github.io/2damasi/sitemap.xml
