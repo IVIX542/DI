@@ -3,248 +3,1220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="shortcut icon" href="img/medidor-de-electricidad.png" type="image/x-icon">
-    <title>Contador Material Design</title>
-    <!-- Configuración de Tailwind CSS para usar la clase 'dark' en el contenedor principal -->
-    <script>
-        tailwind.config = {
-            darkMode: 'class', 
-        }
-    </script>
-    <!-- Incluyendo Tailwind CSS para el diseño y la responsividad -->
+    <title>Control de Aforo 3D - Edición Club</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js CDN (Versión r128) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls CDN (Para mover la cámara con el ratón/touch) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
-        /* Fuente Inter de Google para un estilo limpio y moderno (Material Design) */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-        
-        /* Estilos base del cuerpo */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f1f5f9; /* Fondo claro (slate-100) */
-            display: flex;
-            flex-direction: column; /* Cambiado a columna para el footer */
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-            transition: background-color 0.3s ease; /* Transición suave para el fondo */
+        /* Estilos personalizados para asegurar que el lienzo 3D ocupe la pantalla */
+        body { margin: 0; font-family: 'Inter', sans-serif; }
+        #scene-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            /* Fondo más oscuro, simulando el techo y las paredes lejanas */
+            background: linear-gradient(135deg, #020210 0%, #1a1a33 50%, #05051e 100%); 
+        }
+        canvas {
+            display: block;
+        }
+        /* Clase para el scrollbar de la lista de personas, estilo oscuro de club */
+        .club-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .club-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        .club-scrollbar::-webkit-scrollbar-thumb {
+            background: #4A3E99; /* Morado/Azul */
+            border-radius: 10px;
+        }
+        .club-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #6D5EAB;
         }
 
-        /* Estilo para el modo oscuro del body (se añade con JS) */
-        body.dark-mode {
-            background-color: #1e293b; /* Fondo oscuro (slate-800) */
-        }
-
-        /* Estilo para el botón de incrementar/decrementar, asegurando una animación fluida */
-        .btn-action {
-            transition: all 0.2s ease-in-out;
-            transform: scale(1);
-            user-select: none; /* Evita que se seleccione el texto */
-            -webkit-tap-highlight-color: transparent; /* Mejora la experiencia táctil */
-        }
-        
-        /* Efecto de 'presionar' (active state) - Sombra forzada para el efecto de hundimiento */
-        .btn-action:active {
-            transform: scale(0.98);
-            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1), 0 1px 2px -2px rgba(0, 0, 0, 0.08);
-        }
-        
-        /* Animación para el número al cambiar */
-        .count-display.animate-change {
-            animation: pulse-scale 0.2s ease-in-out;
-        }
-
-        @keyframes pulse-scale {
-            0% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.03); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        
-        /* --- Estilos del Switch de Tema --- */
-
-        /* Mover el círculo (dot) cuando el checkbox está marcado */
-        #theme-toggle:checked ~ .dot {
-            transform: translateX(24px); 
-        }
-
-        /* Cambiar el color del fondo del switch cuando está activo */
-        #theme-toggle:checked + .toggle-bg {
-            background-color: #4f46e5; /* Indigo-600: color activo */
+        /* Sombra de texto para el neón */
+        .text-shadow-lg {
+            text-shadow: 0 0 5px currentColor, 0 0 10px currentColor;
         }
     </style>
+    <script>
+        // Configuración de Tailwind para usar la fuente Inter
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary-neon': '#7E57FF', // Púrpura brillante (HOMBRE)
+                        'secondary-neon': '#FF57A6', // Rosa brillante (MUJER)
+                        'danger-neon': '#FF4D4D', // Rojo brillante
+                        'male-color': '#7E57FF',
+                        'female-color': '#FF57A6',
+                    }
+                }
+            }
+        }
+    </script>
 </head>
 <body>
+    <!-- Contenedor 3D -->
+    <div id="scene-container"></div>
 
-    <!-- Contenedor Principal de la Aplicación (Tarjeta) -->
-    <!-- Clases dark:bg-slate-800 (fondo oscuro) y bg-white (fondo claro) están definidas. -->
-    <div id="counter-app" class="bg-white dark:bg-slate-800 p-6 sm:p-10 rounded-3xl shadow-2xl w-full max-w-sm text-center transform transition duration-300 hover:shadow-3xl dark:text-gray-50">
-        
-        <!-- Interruptor de Modo Oscuro -->
-        <div class="flex justify-end mb-4">
-            <label for="theme-toggle" class="flex items-center cursor-pointer">
-                <!-- Icono de Sol -->
-                <span class="text-yellow-500 mr-2 text-xl transition-opacity duration-300" id="sun-icon">☀️</span>
-                
-                <!-- Contenedor del Switch -->
-                <div class="relative w-14 h-8">
-                    <!-- Checkbox invisible que maneja el estado -->
-                    <input type="checkbox" id="theme-toggle" class="sr-only">
-                    <!-- Pista/fondo del switch -->
-                    <div class="toggle-bg block w-full h-full rounded-full transition-colors duration-300 ease-in-out bg-gray-300 dark:bg-gray-600"></div>
-                    <!-- Círculo del switch (selector) -->
-                    <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition transform duration-300 shadow"></div>
-                </div>
+    <!-- Panel de Control (Overlay de la UI) -->
+    <div class="fixed top-0 right-0 h-full w-full md:w-96 bg-black bg-opacity-70 backdrop-blur-sm p-4 text-white z-10 overflow-y-auto club-scrollbar">
+        <h1 class="text-3xl font-extrabold mb-2 text-primary-neon text-shadow-lg">Aforo: Club Insight</h1>
+        <p class="text-sm mb-4 text-gray-300">Monitoreo en tiempo real del flujo de asistentes.</p>
 
-                <!-- Icono de Luna -->
-                <span class="text-blue-300 ml-2 text-xl transition-opacity duration-300" id="moon-icon">🌙</span>
-            </label>
-        </div>
-
-        <!-- Encabezado -->
-        <h1 class="text-3xl font-extrabold mb-8 text-indigo-700 dark:text-indigo-400">
-            Contador de Flujo
-        </h1>
-
-        <!-- Texto de Etiqueta -->
-        <p class="text-lg text-gray-600 dark:text-gray-300 mb-4 font-medium">
-            Personas Registradas:
-        </p>
-
-        <!-- Display del Contador -->
-        <div class="mb-10">
-            <!-- El color del texto del contador ahora se adapta al modo oscuro -->
-            <span id="count-display" class="count-display text-8xl font-black text-gray-900 dark:text-white leading-none transition-transform duration-200 block">
-                0
-            </span>
-        </div>
-
-        <!-- Botones de Acción (+ y -) -->
-        <div class="flex justify-center gap-4 mb-6">
-            <!-- Botón Decrementar (-) -->
-            <button id="btn-decrement" class="btn-action w-20 h-20 rounded-full bg-red-500 hover:bg-red-600 text-white font-bold text-4xl flex items-center justify-center shadow-md hover:shadow-lg">
-                -
-            </button>
+        <!-- Aforo Actual y Barra de Progreso -->
+        <div class="bg-gray-800 p-4 rounded-xl shadow-lg border border-primary-neon/30 mb-6">
+            <div class="flex justify-between items-baseline mb-2">
+                <span class="text-xl font-bold text-white">Personas en Club:</span>
+                <span id="currentCount" class="text-4xl font-extrabold text-secondary-neon">0</span>
+            </div>
             
-            <!-- Botón Incrementar (+) -->
-            <button id="btn-increment" class="btn-action w-20 h-20 rounded-full bg-green-500 hover:bg-green-600 text-white font-bold text-4xl flex items-center justify-center shadow-md hover:shadow-lg">
-                +
+            <!-- Indicador de Aforo Máximo -->
+            <div class="mb-3">
+                <label for="maxCapacity" class="block text-sm font-medium text-gray-400">Capacidad Máxima (Aforo)</label>
+                <input type="number" id="maxCapacity" value="100" min="1" class="mt-1 block w-full rounded-lg border-gray-600 bg-gray-700 text-white p-2 text-center transition duration-150 focus:border-primary-neon focus:ring-primary-neon" onchange="updateCapacity()">
+                <div id="capacityWarning" class="text-sm mt-1 text-danger-neon hidden">Advertencia: Aforo superado!</div>
+            </div>
+
+            <!-- Barra de Progreso Dinámica -->
+            <div class="h-4 rounded-full bg-gray-700 overflow-hidden">
+                <div id="capacityBar" class="h-4 bg-primary-neon transition-all duration-500" style="width: 0%;"></div>
+            </div>
+            <p id="capacityStatus" class="text-xs mt-2 text-center font-semibold"></p>
+        </div>
+
+        <!-- --- RELACIÓN HOMBRE/MUJER --- -->
+        <div class="bg-gray-800 p-4 rounded-xl shadow-lg border border-secondary-neon/30 mb-6">
+            <h2 class="text-xl font-bold mb-3 text-secondary-neon">Relación de Género</h2>
+            
+            <!-- Conteo de Género -->
+            <div class="flex justify-around text-center mb-3">
+                <div class="text-male-color">
+                    <span id="manCount" class="text-2xl font-bold">0</span>
+                    <p class="text-sm">Hombres</p>
+                </div>
+                <div class="text-secondary-neon">
+                    <span id="womanCount" class="text-2xl font-bold">0</span>
+                    <p class="text-sm">Mujeres</p>
+                </div>
+            </div>
+
+            <!-- Barra de Relación (Stack) -->
+            <div class="h-6 rounded-lg bg-gray-600 overflow-hidden flex shadow-inner">
+                <div id="manBar" class="h-full bg-male-color transition-all duration-500" style="width: 50%;"></div>
+                <div id="womanBar" class="h-full bg-secondary-neon transition-all duration-500" style="width: 50%;"></div>
+            </div>
+            
+            <!-- Ratio -->
+            <p class="text-sm mt-3 text-center text-gray-200">Ratio Hombres por Mujer: <span id="genderRatio" class="font-bold text-lg text-white">0:0</span></p>
+
+        </div>
+        <!-- --- FIN RELACIÓN HOMBRE/MUJER --- -->
+
+
+        <!-- Controles de Aforo Táctiles (Simulando la entrada) -->
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <button id="addMan" onclick="addPerson('man')" class="flex flex-col items-center justify-center p-4 bg-male-color hover:bg-male-color/80 text-white font-bold rounded-xl shadow-lg transition duration-200 transform hover:scale-[1.02] disabled:bg-gray-600 disabled:opacity-50">
+                <!-- Icono SVG: Persona que entra -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 mb-1"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                <span>Entra Hombre</span>
+            </button>
+            <button id="addWoman" onclick="addPerson('woman')" class="flex flex-col items-center justify-center p-4 bg-secondary-neon hover:bg-secondary-neon/80 text-white font-bold rounded-xl shadow-lg transition duration-200 transform hover:scale-[1.02] disabled:bg-gray-600 disabled:opacity-50">
+                <!-- Icono SVG: Persona que entra -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 mb-1"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                <span>Entra Mujer</span>
+            </button>
+        </div>
+
+        <!-- Controles de Salida y Limpieza -->
+        <div class="flex gap-4 mb-6">
+            <button id="clearAll" onclick="clearAllPeople()" class="flex-1 flex items-center justify-center p-3 bg-danger-neon hover:bg-danger-neon/80 text-white font-bold rounded-xl shadow-lg transition duration-200 transform hover:scale-[1.02] disabled:bg-gray-600 disabled:opacity-50">
+                <!-- Icono SVG: Limpiar (Puerta) -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-2"><path d="M13 3h-2a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h2"/><path d="M15 17.5V17a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v.5"/><path d="M9 15V9h6v6"/></svg>
+                <span>Limpiar Todo</span>
             </button>
         </div>
         
-        <!-- Botón de Reset -->
-        <button id="btn-reset" class="btn-action w-full py-3 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-semibold text-lg uppercase tracking-wider mt-4 shadow-md hover:shadow-lg">
-            Reiniciar a Cero
-        </button>
-
+        <!-- Lista de Personas -->
+        <h2 class="text-xl font-bold mb-3 text-primary-neon border-b border-primary-neon/50 pb-2">Lista de Asistentes</h2>
+        <ul id="peopleList" class="space-y-2 max-h-48 overflow-y-auto club-scrollbar">
+            <!-- Los elementos de la lista se inyectarán aquí -->
+            <li class="text-gray-400 text-sm italic">La lista se actualizará al añadir personas...</li>
+        </ul>
     </div>
 
-    <!-- Footer - fuera de la tarjeta principal -->
-    <footer class="mt-8 text-sm text-gray-500 dark:text-gray-400 transition-colors duration-300">
-        © 2025 Desarrollado por Iván López Benítez
-    </footer>
-
     <script>
-        // Variables globales
-        let count = 0;
-        const body = document.body;
-        const counterApp = document.getElementById('counter-app');
-        const countDisplay = document.getElementById('count-display');
-        const btnIncrement = document.getElementById('btn-increment');
-        const btnDecrement = document.getElementById('btn-decrement');
-        const btnReset = document.getElementById('btn-reset');
-        const themeToggle = document.getElementById('theme-toggle');
+        // --- DATA DE NOMBRES ---
+        const MALE_NAMES = ["Alejandro", "Daniel", "Pablo", "Álvaro", "Adrián", "Javier", "Sergio", "Marcos", "Manuel", "Jorge", "Carlos", "Juan", "David", "Miguel", "Antonio", "Luis", "Rafael", "Ricardo", "Fernando", "Diego"];
+        const FEMALE_NAMES = ["Sofía", "Lucía", "Martina", "María", "Paula", "Carla", "Sara", "Laura", "Elena", "Marta", "Carmen", "Ana", "Isabel", "Andrea", "Natalia", "Patricia", "Verónica", "Rocío", "Claudia", "Beatriz"];
+        const SURNAMES = ["García", "Rodríguez", "González", "Fernández", "López", "Martínez", "Sánchez", "Pérez", "Gómez", "Martín", "Jiménez", "Ruiz", "Hernández", "Díaz", "Moreno", "Álvarez", "Muñoz", "Romero", "Alonso", "Gutierrez"];
+        
+        // Almacena los nombres usados para asegurar que no se repitan
+        const usedNames = new Set();
+        
+        // THREE.JS VARIABLES
+        let scene, camera, renderer, controls;
+        const people = [];
+        let maxCapacity = 100;
+        let isGlobalRemovalActive = false;
 
-        // Función para aplicar el tema y actualizar la interfaz
-        function applyTheme(isDark) {
-            if (isDark) {
-                // Modo Oscuro
-                body.classList.add('dark-mode');
-                counterApp.classList.add('dark'); // Añade la clase 'dark' que activa los estilos Tailwind
-                themeToggle.checked = true;
-                localStorage.setItem('theme', 'dark');
+        // Configuration
+        const CLUB_SIZE = 100;
+        const TIME_TO_REMOVE = 2000; // 2 seconds delay for removal
+        const INTERACTION_DISTANCE = 8; // Distancia máxima para iniciar la conversación
+        const INTERACTION_DURATION = 3000; // Duración de la conversación en ms
+        const Y_SHIFT = 1.0; // Desplazamiento global para que la base del personaje sea Y=0
+
+        // Estado de Zonas del Club
+        const ZONE_BAR = { center: new THREE.Vector3(-30, 0, 0), radius: 10 };
+        const ZONE_DJ = { center: new THREE.Vector3(0, 0, -35), radius: 10 };
+        const ZONE_VIP = { center: new THREE.Vector3(30, 0, 0), radius: 10 };
+        const ZONE_DANCE = { center: new THREE.Vector3(0, 0, 0), radius: 20 };
+
+        // State object for each person (for better state management)
+        const peopleState = [];
+        
+        // Colores base para la ropa (Neón)
+        const MALE_CLOTHES_COLORS = [0x7E57FF, 0x00FFFF, 0xFFFF00]; 
+        const FEMALE_CLOTHES_COLORS = [0xFF57A6, 0xFF00FF, 0x00FF00]; 
+        // Colores base para la 'piel' o el color de la cabeza
+        const SKIN_COLORS = [0xD4A373, 0xBB855C, 0xA07A5D, 0x8D6B4E, 0xFFDEB4]; 
+        
+        // Frases base de IA para la simulación
+        const CONVERSATION_STARTERS_BASE = [
+            "¡Qué buena música!", "¿Vienes mucho por aquí?", "¿Conoces al DJ?", 
+            "¡Me encanta tu outfit!", "¿Tomamos algo?", "¡El ambiente está genial!",
+            "¿Bailamos un poco?", "¡Qué noche!", "¿Qué tal la semana?",
+            "¡Parece que va a ser largo!", "¿Tienes planes para mañana?",
+            "¡Las luces de neón son increíbles!", "¿Has estado en la zona VIP?",
+            "¡El barman es rápido!"
+        ];
+
+        // --- NAME/COLOR/UTILITY LOGIC ---
+        
+        function getRandomColor(colorArray) {
+            return colorArray[Math.floor(Math.random() * colorArray.length)];
+        }
+        
+        function generateUniqueName(type) {
+            // ... (Lógica de nombre)
+            const nameList = type === 'man' ? MALE_NAMES : FEMALE_NAMES;
+            let fullName;
+            let attempts = 0;
+            const maxAttempts = nameList.length * SURNAMES.length; 
+            
+            do {
+                if (attempts >= maxAttempts) {
+                    return type === 'man' ? `Hombre ${peopleState.length + 1}` : `Mujer ${peopleState.length + 1}`;
+                }
+
+                const firstName = nameList[Math.floor(Math.random() * nameList.length)];
+                let surname1 = SURNAMES[Math.floor(Math.random() * SURNAMES.length)];
+                let fullNameTemp = firstName + " " + surname1;
+                
+                if (Math.random() < 0.5) { 
+                    const surname2 = SURNAMES[Math.floor(Math.random() * SURNAMES.length)];
+                    fullNameTemp += " " + surname2;
+                }
+                
+                fullName = fullNameTemp;
+                attempts++;
+            } while (usedNames.has(fullName));
+
+            usedNames.add(fullName);
+            return fullName;
+        }
+
+        /**
+         * Genera una frase de conversación única combinando dos frases base.
+         */
+        function generateUniquePhrase() {
+            const phrases = [...CONVERSATION_STARTERS_BASE]; 
+            
+            if (phrases.length < 2) return phrases[0] || "Hola.";
+
+            let index1 = Math.floor(Math.random() * phrases.length);
+            const phrase1 = phrases[index1];
+            
+            phrases.splice(index1, 1);
+            
+            let index2 = Math.floor(Math.random() * phrases.length);
+            const phrase2 = phrases[index2];
+
+            // Formato de combinación
+            const p1 = phrase1.replace(/[?!.]$/, '').trim(); // Quitar puntuación
+            const p2 = phrase2.toLowerCase().replace(/^[¿¡]/, ''); // Convertir a minúsculas y quitar signos iniciales
+
+            return `${p1}, y ${p2}`;
+        }
+
+
+        // --- BUBBLE/SPRITE LOGIC (For 3D Text) ---
+
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        
+        function createSpeechBubble(text, color = '#FFFFFF') {
+            const padding = 10;
+            const fontSize = 32;
+            const font = `Bold ${fontSize}px Inter, sans-serif`;
+            
+            context.font = font;
+            const metrics = context.measureText(text);
+            const textWidth = metrics.width;
+            
+            canvas.width = textWidth + padding * 2;
+            canvas.height = fontSize + padding * 2;
+            
+            context.font = font;
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+
+            // Background of the bubble
+            context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            context.beginPath();
+            context.roundRect(0, 0, canvas.width, canvas.height, 10);
+            context.fill();
+
+            // Text
+            context.fillStyle = color;
+            context.fillText(text, canvas.width / 2, canvas.height / 2);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+
+            const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+            const sprite = new THREE.Sprite(material);
+            
+            // Escala para burbujas más pequeñas (0.1)
+            const scaleFactor = 0.1; 
+            sprite.scale.set(canvas.width * scaleFactor, canvas.height * scaleFactor, 1);
+
+            return sprite;
+        }
+
+
+        // --- THREE.JS SCENE SETUP & AMBIENTACION ---
+
+        /**
+         * Crea un objeto cilíndrico de luz de neón.
+         * @param {number} x - Posición X.
+         * @param {number} y - Posición Y.
+         * @param {number} z - Posición Z.
+         * @param {number} color - Color hexadecimal.
+         */
+        function createNeonLight(x, y, z, color) {
+            const lightGeometry = new THREE.CylinderGeometry(0.5, 0.5, 5, 8);
+            const lightMaterial = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.8
+            });
+            const light = new THREE.Mesh(lightGeometry, lightMaterial);
+            light.position.set(x, y, z);
+            light.rotation.x = Math.PI / 2; // Orientación horizontal
+            scene.add(light);
+
+            // Luz puntual para el brillo
+            const pointLight = new THREE.PointLight(color, 10, 30);
+            pointLight.position.set(x, y, z);
+            scene.add(pointLight);
+        }
+
+        /**
+         * Crea un personaje estático (Barman o DJ).
+         * @param {string} type - 'barman' o 'dj'.
+         * @param {THREE.Vector3} position - Posición (la base del personaje).
+         * @param {number} rotationY - Rotación Y.
+         */
+        function createNPC(type, position, rotationY) {
+             // Materiales
+            const skinColor = getRandomColor(SKIN_COLORS);
+            const clothesColor = (type === 'barman') ? 0x222222 : 0xFF00FF; // Negro o magenta
+            const skinMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+            const clothesMaterial = new THREE.MeshLambertMaterial({
+                color: clothesColor,
+                emissive: clothesColor,
+                emissiveIntensity: 0.1, 
+                transparent: true,
+                opacity: 0.95
+            });
+
+            // 1. Cabeza (5.5 -> 4.5)
+            const headGeometry = new THREE.SphereGeometry(1.5, 16, 16);
+            const head = new THREE.Mesh(headGeometry, skinMaterial);
+            head.position.y = 5.5 - Y_SHIFT; 
+            head.castShadow = true;
+
+            // 2. Cuerpo (3.25 -> 2.25)
+            const bodyHeight = 4.5;
+            const bodyRadius = 1.2;
+            const bodyGeometry = new THREE.CylinderGeometry(bodyRadius, bodyRadius * 0.8, bodyHeight, 16);
+            const body = new THREE.Mesh(bodyGeometry, clothesMaterial);
+            body.position.y = bodyHeight / 2 + 1 - Y_SHIFT; 
+            body.castShadow = true;
+            
+            // 3. Grupo
+            const npcGroup = new THREE.Group();
+            npcGroup.add(body, head);
+            
+            // Ajustar los pivots de los brazos (4.5 -> 3.5)
+            const armGeometry = new THREE.CylinderGeometry(0.4, 0.4, 3.5, 8);
+            const pivotArmLeft = new THREE.Group();
+            pivotArmLeft.position.set(-bodyRadius, 4.5 - Y_SHIFT, 0); 
+            const armLeft = new THREE.Mesh(armGeometry, clothesMaterial);
+            armLeft.position.x = -1.75; 
+            pivotArmLeft.add(armLeft);
+            
+            const pivotArmRight = new THREE.Group();
+            pivotArmRight.position.set(bodyRadius, 4.5 - Y_SHIFT, 0); 
+            const armRight = new THREE.Mesh(armGeometry, clothesMaterial);
+            armRight.position.x = 1.75; 
+            pivotArmRight.add(armRight);
+            
+            npcGroup.add(pivotArmLeft, pivotArmRight);
+            
+            // Posición y rotación
+            npcGroup.position.copy(position);
+            npcGroup.rotation.y = rotationY;
+            scene.add(npcGroup);
+            
+            // Animación sutil
+            const animationData = {
+                object: npcGroup,
+                offset: Math.random() * 10,
+                armLeft: pivotArmLeft,
+                armRight: pivotArmRight
+            };
+            
+            return animationData;
+        }
+
+        let npcBarman, npcDJ; 
+
+        function setupClubEnvironment() {
+            // --- 1. Pista de Baile (Centro) ---
+            const floorGeometry = new THREE.PlaneGeometry(CLUB_SIZE, CLUB_SIZE);
+            const floorMaterial = new THREE.MeshPhongMaterial({
+                color: 0x050515, 
+                shininess: 80,
+                specular: 0x111155, // Especular púrpura oscuro
+            });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // --- 2. Zona de DJ (Fondo/Centro - Z Negativa) ---
+            const PLATFORM_HEIGHT = 2;
+            
+            const djPlatformGeometry = new THREE.BoxGeometry(20, PLATFORM_HEIGHT, 8);
+            const djPlatformMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x1A0033, // Base muy oscura
+                specular: 0x440099, // Toque especular púrpura
+                shininess: 50 
+            });
+            const djPlatform = new THREE.Mesh(djPlatformGeometry, djPlatformMaterial);
+            djPlatform.position.set(ZONE_DJ.center.x, PLATFORM_HEIGHT / 2, ZONE_DJ.center.z - 2); 
+            djPlatform.receiveShadow = true;
+            scene.add(djPlatform);
+
+            // Luz de neón púrpura debajo de la plataforma (Efecto Escenario Elevado)
+            const djAmbientLight = new THREE.PointLight(0xAA00FF, 5, 15); 
+            djAmbientLight.position.set(ZONE_DJ.center.x, PLATFORM_HEIGHT + 0.5, ZONE_DJ.center.z - 2); // Posición justo encima
+            scene.add(djAmbientLight);
+
+
+            // Mesa de Mezclas (DJ Table) - Detallada
+            const TABLE_HEIGHT = 1.5; // Altura de trabajo sobre el suelo (2m plataforma + 1.5m mesa = 3.5m)
+            const TABLE_TOP_Y = PLATFORM_HEIGHT + TABLE_HEIGHT; 
+            
+            const djTableGeometry = new THREE.BoxGeometry(7, 0.5, 2.5);
+            const djTableMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x000000, 
+                transparent: true, 
+                opacity: 0.8 
+            });
+            const djTable = new THREE.Mesh(djTableGeometry, djTableMaterial);
+            djTable.position.set(ZONE_DJ.center.x, TABLE_TOP_Y - (0.5/2), ZONE_DJ.center.z - 1.5); 
+            scene.add(djTable);
+            
+            // Simulación de los "Decks" y "Mixer" (Controles)
+            // 1. Mixer central (caja de controles brillante)
+            const mixerGeometry = new THREE.BoxGeometry(1.5, 0.2, 1);
+            const mixerMaterial = new THREE.MeshBasicMaterial({ color: 0x00FFFF, emissive: 0x00FFFF, emissiveIntensity: 0.5 });
+            const mixer = new THREE.Mesh(mixerGeometry, mixerMaterial);
+            mixer.position.set(ZONE_DJ.center.x, TABLE_TOP_Y + 0.1, ZONE_DJ.center.z - 1.5);
+            scene.add(mixer);
+
+            // 2. Decks laterales (platos)
+            const deckRadius = 1.5;
+            const deckGeometry = new THREE.CylinderGeometry(deckRadius, deckRadius, 0.1, 32);
+            const deckMaterial = new THREE.MeshBasicMaterial({ color: 0x444444 });
+            
+            const deckLeft = new THREE.Mesh(deckGeometry, deckMaterial);
+            deckLeft.position.set(ZONE_DJ.center.x - 2.5, TABLE_TOP_Y + 0.05, ZONE_DJ.center.z - 1.5);
+            deckLeft.rotation.x = Math.PI / 2; // Orientación plana
+            scene.add(deckLeft);
+            
+            const deckRight = new THREE.Mesh(deckGeometry, deckMaterial);
+            deckRight.position.set(ZONE_DJ.center.x + 2.5, TABLE_TOP_Y + 0.05, ZONE_DJ.center.z - 1.5);
+            deckRight.rotation.x = Math.PI / 2;
+            scene.add(deckRight);
+
+
+            // DJ (NPC) - Base en Y=2 (sobre la plataforma)
+            npcDJ = createNPC('dj', new THREE.Vector3(ZONE_DJ.center.x, PLATFORM_HEIGHT, ZONE_DJ.center.z - 3), Math.PI); // Mirando a la pista
+            
+            // --- 3. Zona de Bar (Izquierda - X Negativa) ---
+            const barCounterGeometry = new THREE.BoxGeometry(40, 2.5, 4);
+            const barCounterMaterial = new THREE.MeshBasicMaterial({ color: 0x0A0A0A });
+            const barCounter = new THREE.Mesh(barCounterGeometry, barCounterMaterial);
+            barCounter.position.set(ZONE_BAR.center.x, 1.25, ZONE_BAR.center.z - 18); // Se mueve a la pared
+            barCounter.rotation.y = Math.PI / 2; // Paralelo a X
+            scene.add(barCounter);
+            
+            const barBackGeometry = new THREE.BoxGeometry(40, 10, 0.5);
+            const barBackMaterial = new THREE.MeshBasicMaterial({ color: 0x110022 });
+            const barBack = new THREE.Mesh(barBackGeometry, barBackMaterial);
+            barBack.position.set(ZONE_BAR.center.x, 5, ZONE_BAR.center.z - 20);
+            barBack.rotation.y = Math.PI / 2;
+            scene.add(barBack);
+            
+            // Barman (NPC) - Base en Y=0 (sobre el suelo)
+            npcBarman = createNPC('barman', new THREE.Vector3(ZONE_BAR.center.x, 0, ZONE_BAR.center.z - 18), Math.PI / 2); 
+            
+            // Botellas de Neón
+            for (let i = -15; i < 15; i += 5) {
+                createNeonLight(ZONE_BAR.center.x, 4.5, ZONE_BAR.center.z - 20 + i, 0xFF00FF);
+            }
+            
+            // --- 4. Sala VIP (Derecha - X Positiva) ---
+            const vipPlatformGeometry = new THREE.BoxGeometry(30, 1.5, 20);
+            const vipPlatformMaterial = new THREE.MeshLambertMaterial({ color: 0x442200 });
+            const vipPlatform = new THREE.Mesh(vipPlatformGeometry, vipPlatformMaterial);
+            vipPlatform.position.set(ZONE_VIP.center.x, 0.75, ZONE_VIP.center.z - 10);
+            vipPlatform.receiveShadow = true;
+            scene.add(vipPlatform);
+
+            // Pared de Cristal (Simulación)
+            const vipGlassGeometry = new THREE.BoxGeometry(30, 8, 0.1);
+            const vipGlassMaterial = new THREE.MeshPhongMaterial({
+                color: 0x00FFFF, 
+                transparent: true,
+                opacity: 0.1,
+                shininess: 100
+            });
+            const vipGlass = new THREE.Mesh(vipGlassGeometry, vipGlassMaterial);
+            vipGlass.position.set(ZONE_VIP.center.x, 4, ZONE_VIP.center.z - 20);
+            scene.add(vipGlass);
+
+            // Sofás VIP - Base en Y=1.5
+            const sofaGeometry = new THREE.BoxGeometry(5, 1, 2);
+            const sofaMaterial = new THREE.MeshLambertMaterial({ color: 0x660066 });
+            
+            const sofa1 = new THREE.Mesh(sofaGeometry, sofaMaterial);
+            sofa1.position.set(ZONE_VIP.center.x - 5, 1.5 + (1/2), ZONE_VIP.center.z - 15);
+            sofa1.rotation.y = Math.PI / 4;
+            scene.add(sofa1);
+            
+            const sofa2 = new THREE.Mesh(sofaGeometry, sofaMaterial);
+            sofa2.position.set(ZONE_VIP.center.x + 5, 1.5 + (1/2), ZONE_VIP.center.z - 5);
+            sofa2.rotation.y = -Math.PI / 4;
+            scene.add(sofa2);
+            
+            // --- 5. Luces de Pared (Neón) ---
+            createNeonLight(-40, 5, 40, 0x0000FF);
+            createNeonLight(40, 5, 40, 0xFF0000);
+            createNeonLight(-40, 5, -40, 0x00FF00);
+            createNeonLight(40, 5, -40, 0xFFFF00);
+        }
+
+        function init() {
+            const container = document.getElementById('scene-container');
+            
+            // 1. Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000); // Fondo negro total
+
+            // 2. Camera setup
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 50, 60);
+
+            // 3. Renderer setup
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true; 
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0; 
+            container.appendChild(renderer.domElement);
+            
+            // 4. Controls 
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true; 
+            controls.dampingFactor = 0.05;
+            controls.maxDistance = 150;
+            controls.minDistance = 20;
+
+            // 5. Lighting (Estilo Club Oscuro)
+            const spotLight = new THREE.SpotLight(0xffffff, 50, 0, Math.PI / 8, 0.5);
+            spotLight.position.set(0, 80, 0);
+            spotLight.castShadow = true;
+            spotLight.shadow.mapSize.width = 2048;
+            spotLight.shadow.mapSize.height = 2048;
+            spotLight.shadow.camera.near = 10;
+            spotLight.shadow.camera.far = 150;
+            scene.add(spotLight);
+
+            const ambientLight = new THREE.AmbientLight(0x0A0A20, 0.5); // Luz ambiental muy oscura
+            scene.add(ambientLight);
+
+            // Luces de Color pulsantes (Simulación de luces de discoteca)
+            const pulseLight1 = new THREE.PointLight(0xFF00FF, 30, 50); 
+            pulseLight1.position.set(-20, 15, -20);
+            scene.add(pulseLight1);
+            
+            const pulseLight2 = new THREE.PointLight(0x00FFFF, 30, 50); 
+            pulseLight2.position.set(20, 15, 20);
+            scene.add(pulseLight2);
+            
+            // Almacenar las luces para la animación
+            window.pulseLights = [pulseLight1, pulseLight2];
+            
+            // 6. Configurar la ambientación del club
+            setupClubEnvironment();
+
+            // 7. Event listeners
+            window.addEventListener('resize', onWindowResize, false);
+            
+            // 8. Start loop
+            animate();
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // --- CORE LOGIC ---
+        
+        /**
+         * Genera un destino aleatorio que evita las áreas restringidas (Bar, DJ).
+         */
+        function getRandomDestination() {
+            let x, z;
+            let targetPosition;
+            let attempts = 0;
+            const CLUB_HALF = CLUB_SIZE / 2;
+
+            // Se elige una zona de destino con cierta probabilidad
+            let zone;
+            const r = Math.random();
+            if (r < 0.5) {
+                // 50% de probabilidad de ir a la pista de baile
+                zone = ZONE_DANCE;
+            } else if (r < 0.75) {
+                // 25% de probabilidad de ir cerca del Bar
+                zone = ZONE_BAR;
             } else {
-                // Modo Claro
-                body.classList.remove('dark-mode');
-                counterApp.classList.remove('dark'); // Elimina la clase 'dark', permitiendo que 'bg-white' se aplique
-                themeToggle.checked = false;
-                localStorage.setItem('theme', 'light');
-            }
-        }
-
-        // Cargar el tema desde localStorage o usar la preferencia del sistema al inicio
-        function loadTheme() {
-            const savedTheme = localStorage.getItem('theme');
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            
-            // Si hay un tema guardado, úsalo. Si no, usa la preferencia del sistema.
-            const isDark = savedTheme ? savedTheme === 'dark' : prefersDark;
-            
-            applyTheme(isDark);
-        }
-
-        // Función para actualizar el contador en la UI con animación
-        function updateCount(newCount) {
-            // Asegura que el contador nunca sea negativo
-            if (newCount < 0) {
-                newCount = 0;
+                 // 25% de probabilidad de ir cerca del VIP
+                zone = ZONE_VIP;
             }
 
-            count = newCount;
-            
-            // 1. Agregar clase de animación
-            countDisplay.classList.add('animate-change');
-            
-            // 2. Actualizar el valor
-            countDisplay.textContent = count;
 
-            // 3. Eliminar la clase después de que termine la animación
+            do {
+                // Generar posición dentro de la zona elegida
+                x = zone.center.x + (Math.random() * zone.radius * 2 - zone.radius);
+                z = zone.center.z + (Math.random() * zone.radius * 2 - zone.radius);
+                targetPosition = new THREE.Vector3(x, 0, z);
+                
+                // Asegurar que la posición no esté demasiado cerca de las estructuras estáticas (Bar/DJ)
+                const distToDJ = targetPosition.distanceTo(ZONE_DJ.center);
+                const distToBar = targetPosition.distanceTo(ZONE_BAR.center);
+
+                // Evitar el área de DJ y el área de Bar por unos 5 metros de radio (evitar chocar con las estructuras)
+                if (distToDJ > 5 && distToBar > 5) {
+                    // Asegurar que está dentro de los límites generales del club
+                    if (x > -CLUB_HALF * 0.9 && x < CLUB_HALF * 0.9 && z > -CLUB_HALF * 0.9 && z < CLUB_HALF * 0.9) {
+                        return targetPosition;
+                    }
+                }
+                attempts++;
+            } while (attempts < 10);
+
+            // En caso de fallar (muy improbable), usa un punto seguro
+            return new THREE.Vector3(0, 0, 0); 
+        }
+        
+        function createPerson(type) {
+            const id = Date.now() + Math.random(); // Unique ID
+            const fullName = generateUniqueName(type);
+            
+            const clothesPalette = (type === 'man') ? MALE_CLOTHES_COLORS : FEMALE_CLOTHES_COLORS;
+            const skinColor = getRandomColor(SKIN_COLORS);
+            const clothesColor = getRandomColor(clothesPalette);
+
+            const skinMaterial = new THREE.MeshLambertMaterial({ color: skinColor });
+            const clothesMaterial = new THREE.MeshLambertMaterial({
+                color: clothesColor,
+                emissive: clothesColor,
+                emissiveIntensity: 0.1, 
+                transparent: true,
+                opacity: 0.95
+            });
+
+            // 1. Cabeza (5.5 -> 4.5)
+            const headGeometry = new THREE.SphereGeometry(1.5, 16, 16);
+            const head = new THREE.Mesh(headGeometry, skinMaterial);
+            head.position.y = 5.5 - Y_SHIFT; 
+            head.castShadow = true;
+
+            // 2. Cuerpo (3.25 -> 2.25)
+            const bodyHeight = 4.5;
+            const bodyRadius = 1.2;
+            const bodyGeometry = new THREE.CylinderGeometry(bodyRadius, bodyRadius * 0.8, bodyHeight, 16);
+            const body = new THREE.Mesh(bodyGeometry, clothesMaterial);
+            body.position.y = bodyHeight / 2 + 1 - Y_SHIFT; 
+            body.castShadow = true;
+
+            // 3. Piernas (1 -> 0)
+            const legGeometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 8);
+            const legMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 }); 
+            
+            const legLeft = new THREE.Mesh(legGeometry, legMaterial);
+            legLeft.position.set(-0.6, 1 - Y_SHIFT, 0); 
+            legLeft.castShadow = true;
+
+            const legRight = new THREE.Mesh(legGeometry, legMaterial);
+            legRight.position.set(0.6, 1 - Y_SHIFT, 0); 
+            legRight.castShadow = true;
+            
+            // 4. Brazos (4.5 -> 3.5)
+            const armGeometry = new THREE.CylinderGeometry(0.4, 0.4, 3.5, 8); 
+            const armLeft = new THREE.Mesh(armGeometry, clothesMaterial);
+            const armRight = new THREE.Mesh(armGeometry, clothesMaterial);
+            
+            const pivotArmLeft = new THREE.Group();
+            pivotArmLeft.position.set(-bodyRadius, 4.5 - Y_SHIFT, 0); 
+            armLeft.position.x = -1.75; 
+            pivotArmLeft.add(armLeft);
+
+            const pivotArmRight = new THREE.Group();
+            pivotArmRight.position.set(bodyRadius, 4.5 - Y_SHIFT, 0); 
+            armRight.position.x = 1.75; 
+            pivotArmRight.add(armRight);
+
+            // 5. Cabello (4.5)
+            let hair;
+            if (type === 'man') {
+                const hairGeometry = new THREE.SphereGeometry(1.6, 16, 16);
+                hair = new THREE.Mesh(hairGeometry, new THREE.MeshLambertMaterial({ color: 0x4B3A2C })); 
+                hair.position.y = head.position.y;
+                hair.scale.y = 0.8;
+            } else {
+                const hairGeometry = new THREE.TorusGeometry(1.8, 0.4, 8, 16);
+                hair = new THREE.Mesh(hairGeometry, new THREE.MeshLambertMaterial({ color: 0xDDDDDD })); 
+                hair.rotation.x = Math.PI / 2;
+                hair.position.y = head.position.y;
+                hair.position.z = 0.2;
+            }
+            hair.castShadow = true;
+
+            const personGroup = new THREE.Group();
+            personGroup.add(legLeft, legRight, body, head, hair, pivotArmLeft, pivotArmRight);
+            personGroup.traverse(function(object) {
+                if (object.isMesh) {
+                    object.castShadow = true;
+                    object.receiveShadow = true;
+                }
+            });
+
+            // Posición inicial aleatoria (utilizando la lógica de destino). Y siempre 0 (piso)
+            const initialDestination = getRandomDestination();
+            personGroup.position.copy(initialDestination);
+            personGroup.rotation.y = Math.random() * Math.PI * 2; 
+
+            scene.add(personGroup);
+
+            // Store State
+            people.push(personGroup);
+            peopleState.push({
+                id: id,
+                type: type, 
+                name: fullName,
+                object: personGroup,
+                bodyMesh: body, 
+                armLeftPivot: pivotArmLeft,  
+                armRightPivot: pivotArmRight,
+                destination: getRandomDestination(), 
+                speed: 0.05 + Math.random() * 0.1, 
+                danceOffset: Math.random() * 10,
+                isRemoving: false,
+                removalTimer: null,
+                isInteracting: false,          
+                interactionTargetId: null,     
+                interactionTimer: null,        
+                speechBubble: null,            
+                clothesColor: `#${clothesColor.toString(16).padStart(6, '0')}` 
+            });
+
+            updateUI();
+        }
+
+        function removePerson(id) {
+            // ... (Lógica de eliminación)
+            const state = peopleState.find(p => p.id === id);
+            if (!state || state.isRemoving) return;
+            
+            endInteraction(state);
+            if (state.interactionTargetId) {
+                const targetState = peopleState.find(p => p.id === state.interactionTargetId);
+                if (targetState) {
+                    endInteraction(targetState);
+                }
+            }
+
+            usedNames.delete(state.name);
+
+            state.isRemoving = true;
+            updateUI();
+
+            state.removalTimer = setTimeout(() => {
+                const index = peopleState.findIndex(p => p.id === id);
+                if (index !== -1) {
+                    scene.remove(state.object);
+                    people.splice(people.indexOf(state.object), 1);
+                    peopleState.splice(index, 1);
+                    updateUI();
+                }
+            }, TIME_TO_REMOVE);
+        }
+
+        function clearAllPeople() {
+            // ... (Lógica de limpiar todo)
+            if (isGlobalRemovalActive || peopleState.length === 0) return;
+
+            isGlobalRemovalActive = true;
+            usedNames.clear(); 
+            updateUI(); 
+
+            let delay = 0;
+            peopleState.forEach(state => {
+                if (!state.isRemoving) {
+                    delay += 50; 
+                    setTimeout(() => removePerson(state.id), delay);
+                }
+            });
+            
             setTimeout(() => {
-                countDisplay.classList.remove('animate-change');
-            }, 250); 
-
-            // Manejo del estado del botón de decremento (incluyendo reactividad al estado deshabilitado)
-            const isDisabled = count === 0;
-            btnDecrement.disabled = isDisabled;
-            
-            // Añadir/quitar estilos para el estado deshabilitado (opacidad y remoción de sombra)
-            btnDecrement.classList.toggle('opacity-50', isDisabled);
-            btnDecrement.classList.toggle('cursor-not-allowed', isDisabled);
-            
-            // Remueve la sombra cuando está deshabilitado para hacerlo plano (Material Design inactivo)
-            btnDecrement.classList.toggle('shadow-md', !isDisabled);
-            btnDecrement.classList.toggle('shadow-none', isDisabled);
-            btnDecrement.classList.toggle('hover:shadow-lg', !isDisabled); 
+                // Re-check state after all planned removals
+                if (peopleState.every(p => p.isRemoving === true) || peopleState.length === 0) {
+                    isGlobalRemovalActive = false;
+                    updateUI(); 
+                }
+            }, delay + TIME_TO_REMOVE + 100);
         }
 
-        // --- Manejadores de Eventos ---
+        function addPerson(type) {
+            // ... (Lógica de añadir persona)
+            if (isGlobalRemovalActive) return;
+            if (people.length < maxCapacity) {
+                createPerson(type);
+            } else {
+                showModal('Aforo Lleno', 'No se pueden añadir más personas. El aforo máximo de ' + maxCapacity + ' personas ha sido alcanzado.', 'danger');
+            }
+        }
+        
+        // --- INTERACTION LOGIC ---
 
-        // Incrementar
-        btnIncrement.addEventListener('click', () => {
-            updateCount(count + 1);
-        });
+        function startInteraction(personAState, personBState) {
+            // ... (Lógica de inicio de interacción)
+            personAState.isInteracting = true;
+            personAState.interactionTargetId = personBState.id;
+            
+            personBState.isInteracting = true;
+            personBState.interactionTargetId = personAState.id;
+            
+            const midpoint = personAState.object.position.clone().add(personBState.object.position).multiplyScalar(0.5);
+            personAState.destination = midpoint;
+            personBState.destination = midpoint;
+            
+            // Orientar personas
+            const directionA = personBState.object.position.clone().sub(personAState.object.position).normalize();
+            const targetRotationA = Math.atan2(directionA.x, directionA.z); 
+            personAState.object.rotation.y = targetRotationA;
+            
+            const directionB = personAState.object.position.clone().sub(personBState.object.position).normalize();
+            const targetRotationB = Math.atan2(directionB.x, directionB.z); 
+            personBState.object.rotation.y = targetRotationB;
 
-        // Decrementar
-        btnDecrement.addEventListener('click', () => {
-            updateCount(count - 1);
-        });
+            const phrase = generateUniquePhrase();
+            
+            personAState.speechBubble = createSpeechBubble(phrase, personAState.clothesColor);
+            personAState.speechBubble.position.set(0, 5.5, 0); 
+            personAState.object.add(personAState.speechBubble);
+            
+            const responsePhrase = generateUniquePhrase();
+            personBState.speechBubble = createSpeechBubble(responsePhrase, personBState.clothesColor);
+            personBState.speechBubble.position.set(0, 5.5, 0); 
+            personBState.object.add(personBState.speechBubble);
 
-        // Reset
-        btnReset.addEventListener('click', () => {
-            updateCount(0);
-        });
+            const interactionTime = INTERACTION_DURATION + Math.random() * 2000;
 
-        // Cambio de Tema
-        themeToggle.addEventListener('change', (e) => {
-            applyTheme(e.target.checked);
-        });
+            personAState.interactionTimer = setTimeout(() => {
+                endInteraction(personAState);
+                if (personBState.interactionTargetId === personAState.id) {
+                    endInteraction(personBState);
+                }
+            }, interactionTime); 
+            
+            personBState.interactionTimer = setTimeout(() => {
+                endInteraction(personBState);
+                if (personAState.interactionTargetId === personBState.id) {
+                    endInteraction(personAState);
+                }
+            }, interactionTime + 500);
+        }
 
-        // Inicialización
-        document.addEventListener('DOMContentLoaded', () => {
-            loadTheme();    // Carga el tema primero para evitar un flash
-            updateCount(0); // Inicializa el contador
-        });
+        function endInteraction(personState) {
+            // ... (Lógica de fin de interacción)
+            personState.isInteracting = false;
+            personState.interactionTargetId = null;
+            
+            clearTimeout(personState.interactionTimer);
+            if (personState.speechBubble) {
+                personState.object.remove(personState.speechBubble);
+                personState.speechBubble.material.map.dispose();
+                personState.speechBubble.material.dispose();
+                personState.speechBubble.geometry.dispose();
+                personState.speechBubble = null;
+            }
+            
+            personState.destination = getRandomDestination(); 
+        }
+
+        function checkInteractions() {
+            // ... (Lógica de chequeo de interacción)
+            for (let i = 0; i < peopleState.length; i++) {
+                const personA = peopleState[i];
+                
+                if (personA.isRemoving || personA.isInteracting) continue;
+
+                for (let j = i + 1; j < peopleState.length; j++) {
+                    const personB = peopleState[j];
+
+                    if (personB.isRemoving || personB.isInteracting) continue;
+
+                    const distance = personA.object.position.distanceTo(personB.object.position);
+                    
+                    if (distance < INTERACTION_DISTANCE) {
+                        if (Math.random() < 0.1) {
+                            startInteraction(personA, personB);
+                            break; 
+                        }
+                    }
+                }
+            }
+        }
+        
+        // --- ANIMATION LOOP ---
+        
+        function animate(time) {
+            requestAnimationFrame(animate);
+
+            controls.update(); 
+            
+            // Animación de luces (simulando pulsaciones)
+            if (window.pulseLights) {
+                 window.pulseLights.forEach((light, index) => {
+                    // Pulso de intensidad basado en el tiempo
+                    light.intensity = 20 + 10 * Math.sin(time / 500 + index * Math.PI); 
+                 });
+            }
+
+            // Animación del DJ (manos en la mesa)
+            if (npcDJ && npcDJ.armLeft) {
+                const armSwing = Math.sin(time / 150) * 0.4;
+                npcDJ.armLeft.rotation.z = Math.sin(time / 300) * 0.4;
+                npcDJ.armLeft.rotation.x = armSwing;
+                
+                npcDJ.armRight.rotation.z = Math.sin(time / 300 + Math.PI) * 0.4;
+                npcDJ.armRight.rotation.x = -armSwing; 
+            }
+
+            // Chequeo de interacciones cada ~1 segundo
+            if (peopleState.length >= 2 && Math.floor(time / 1000) !== Math.floor((time - 16) / 1000)) {
+                checkInteractions();
+            }
+
+            // Movement, Dancing, and Interaction
+            peopleState.forEach(state => {
+                const person = state.object;
+                
+                if (state.isRemoving) {
+                    // Lógica de Salida (Fade out y movimiento a punto de salida)
+                    person.traverse(function(object) {
+                        if (object.isMesh) {
+                            if (object.material.transparent) {
+                                object.material.opacity = Math.max(0, object.material.opacity - 0.02);
+                            }
+                            if (!object.material.transparent) {
+                                object.material.transparent = true;
+                                object.material.opacity = 0.95; 
+                            }
+                        }
+                    });
+
+                    const exitTarget = new THREE.Vector3(0, 0, CLUB_SIZE / 2);
+                    const exitDirection = exitTarget.clone().sub(person.position).normalize();
+                    person.position.add(exitDirection.multiplyScalar(0.5));
+                    return; 
+                } 
+                
+                // Lógica de Interacción/Movimiento
+                if (state.isInteracting) {
+                    // Estar quieto y orientado al target
+                    const targetState = peopleState.find(p => p.id === state.interactionTargetId);
+                    if (targetState) {
+                        const direction = targetState.object.position.clone().sub(person.position).normalize();
+                        const targetRotation = Math.atan2(direction.x, direction.z) + Math.PI; 
+                        person.rotation.y += (targetRotation - person.rotation.y) * 0.1;
+                    }
+                    
+                    person.position.y = Math.sin(time / 400 + state.danceOffset) * 0.1; 
+                } else {
+                    // Movement: Move towards destination
+                    const distance = person.position.distanceTo(state.destination);
+                    if (distance < 3) { 
+                        state.destination = getRandomDestination(); 
+                    }
+
+                    const direction = state.destination.clone().sub(person.position).normalize();
+                    const targetRotation = Math.atan2(direction.x, direction.z);
+                    person.rotation.y += (targetRotation - person.rotation.y) * 0.05;
+
+                    person.position.add(direction.multiplyScalar(state.speed));
+
+                    // "Dancing": Full movement
+                    person.position.y = Math.sin(time / 200 + state.danceOffset) * 0.3; 
+                }
+                
+                // Animación de Brazos y Cuerpo (Siempre activo)
+                if (state.bodyMesh) {
+                    const danceFactor = state.isInteracting ? 0.5 : 1.0; 
+                    
+                    const bodyRotationX = Math.sin(time / 400 + state.danceOffset * 2) * 0.2 * danceFactor;
+                    const bodyRotationZ = Math.cos(time / 400 + state.danceOffset * 2) * 0.2 * danceFactor;
+                    state.bodyMesh.rotation.x = bodyRotationX;
+                    state.bodyMesh.rotation.z = bodyRotationZ;
+                    
+                    const armSwing = Math.sin(time / 150 + state.danceOffset) * 0.6 * danceFactor; 
+                    
+                    state.armLeftPivot.rotation.z = Math.sin(time / 300 + state.danceOffset * 3) * 0.4 * danceFactor;
+                    state.armLeftPivot.rotation.x = armSwing;
+                    
+                    state.armRightPivot.rotation.z = Math.sin(time / 300 + state.danceOffset * 3 + Math.PI) * 0.4 * danceFactor; 
+                    state.armRightPivot.rotation.x = -armSwing; 
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        // --- UI / DASHBOARD LOGIC (Sin cambios en funcionalidad) ---
+
+        function updateCapacity() {
+            const input = document.getElementById('maxCapacity');
+            const newCapacity = parseInt(input.value);
+            if (newCapacity > 0) {
+                maxCapacity = newCapacity;
+            } else {
+                input.value = maxCapacity; 
+            }
+            updateUI();
+        }
+
+        function updateUI() {
+            const currentCount = people.length;
+            
+            const manCount = peopleState.filter(p => p.type === 'man' && !p.isRemoving).length;
+            const womanCount = peopleState.filter(p => p.type === 'woman' && !p.isRemoving).length;
+            const totalActive = manCount + womanCount;
+
+            // --- AFORO GENERAL ---
+            const percentage = maxCapacity > 0 ? (currentCount / maxCapacity) * 100 : 0;
+            document.getElementById('currentCount').textContent = currentCount;
+            const capacityBar = document.getElementById('capacityBar');
+            const capacityStatus = document.getElementById('capacityStatus');
+            const capacityWarning = document.getElementById('capacityWarning');
+
+            let barColor = 'bg-primary-neon';
+            let statusText = `${Math.round(percentage)}% de la capacidad total`;
+            
+            if (percentage >= 100) {
+                barColor = 'bg-red-600';
+                statusText = `¡AFORO MÁXIMO ALCANZADO! ${currentCount}/${maxCapacity}`;
+                capacityWarning.classList.remove('hidden');
+            } else if (percentage >= 80) {
+                barColor = 'bg-orange-400';
+                capacityWarning.classList.add('hidden');
+            } else {
+                capacityWarning.classList.add('hidden');
+            }
+
+            capacityBar.style.width = `${Math.min(100, percentage)}%`;
+            capacityBar.className = `h-4 rounded-full transition-all duration-500 ${barColor}`;
+            capacityStatus.textContent = statusText;
+            
+            
+            // --- RELACIÓN DE GÉNERO ---
+            document.getElementById('manCount').textContent = manCount;
+            document.getElementById('womanCount').textContent = womanCount;
+
+            let manPercent = 0;
+            let womanPercent = 0;
+            let ratioText = "0:0";
+
+            if (totalActive > 0) {
+                manPercent = (manCount / totalActive) * 100;
+                womanPercent = (womanCount / totalActive) * 100;
+                
+                if (womanCount > 0) {
+                    const ratio = (manCount / womanCount).toFixed(1);
+                    ratioText = `${ratio}:1`;
+                } else if (manCount > 0) {
+                    ratioText = `${manCount}:0 (Solo Hombres)`;
+                } else {
+                    ratioText = "N/A";
+                }
+            } else {
+                 ratioText = "0:0";
+            }
+            
+            document.getElementById('manBar').style.width = `${manPercent}%`;
+            document.getElementById('womanBar').style.width = `${womanPercent}%`;
+            document.getElementById('genderRatio').textContent = ratioText;
+
+
+            // --- LISTA DE PERSONAS Y BOTONES ---
+            const peopleListElement = document.getElementById('peopleList');
+            peopleListElement.innerHTML = ''; 
+
+            peopleState.sort((a, b) => (a.isRemoving === b.isRemoving) ? 0 : a.isRemoving ? 1 : -1);
+
+            peopleState.forEach(state => {
+                const li = document.createElement('li');
+                const nameSpan = document.createElement('span');
+                const statusSpan = document.createElement('span'); 
+                const removeButton = document.createElement('button');
+
+                nameSpan.textContent = state.name;
+                nameSpan.className = 'flex-1 truncate';
+
+                let className = 'flex items-center justify-between p-2 rounded-lg transition duration-150 ';
+                let buttonClass = 'ml-3 text-white font-bold py-1 px-3 rounded-md transition duration-150 shadow-sm disabled:bg-gray-400 disabled:opacity-50';
+
+                if (state.isInteracting) {
+                    statusSpan.textContent = " (Hablando)";
+                    statusSpan.className = 'text-green-400 font-semibold text-sm';
+                    nameSpan.appendChild(statusSpan);
+                }
+
+                if (state.isRemoving) {
+                    className += 'bg-danger-neon/20 border border-danger-neon text-danger-neon line-through italic';
+                    buttonClass += ' bg-gray-600 text-gray-300 cursor-not-allowed';
+                    removeButton.textContent = 'Saliendo...';
+                    removeButton.disabled = true;
+                } else {
+                    className += 'bg-gray-700 hover:bg-gray-600 border border-gray-600';
+                    buttonClass += ' bg-red-600 hover:bg-red-700';
+                    removeButton.textContent = 'Salir';
+                    removeButton.disabled = isGlobalRemovalActive;
+                    removeButton.onclick = () => removePerson(state.id);
+                }
+                
+                const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-1"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>`;
+                
+                removeButton.innerHTML = svgIcon + removeButton.textContent;
+                removeButton.className = buttonClass + ' flex items-center';
+
+                li.className = className;
+                li.appendChild(nameSpan);
+                li.appendChild(removeButton);
+                peopleListElement.appendChild(li);
+            });
+
+            if (peopleState.length === 0) {
+                 peopleListElement.innerHTML = '<li class="text-gray-400 text-sm italic">La lista está vacía.</li>';
+            }
+
+            const clearButton = document.getElementById('clearAll');
+            const addManButton = document.getElementById('addMan');
+            const addWomanButton = document.getElementById('addWoman');
+
+            if (clearButton) {
+                 clearButton.disabled = isGlobalRemovalActive || currentCount === 0;
+                 clearButton.textContent = isGlobalRemovalActive ? 'Limpiando...' : 'Limpiar Todo';
+                 const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-2"><path d="M13 3h-2a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h2"/><path d="M15 17.5V17a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v.5"/><path d="M9 15V9h6v6"/></svg>`;
+                 clearButton.innerHTML = svgIcon + clearButton.textContent;
+            }
+            
+            addManButton.disabled = isGlobalRemovalActive || currentCount >= maxCapacity;
+            addWomanButton.disabled = isGlobalRemovalActive || currentCount >= maxCapacity;
+
+            const maxCapacityReached = currentCount >= maxCapacity;
+            
+            addManButton.classList.toggle('bg-gray-600', maxCapacityReached);
+            addManButton.classList.toggle('bg-male-color', !maxCapacityReached);
+
+            addWomanButton.classList.toggle('bg-gray-600', maxCapacityReached);
+            addWomanButton.classList.toggle('bg-secondary-neon', !maxCapacityReached);
+        }
+
+        function showModal(title, message, type) {
+            console.warn(`[${type.toUpperCase()}] ${title}: ${message}`);
+            
+            const existingModal = document.getElementById('customModal');
+            if (existingModal) existingModal.remove();
+
+            const bgColor = type === 'danger' ? 'bg-red-600' : 'bg-primary-neon';
+
+            const modalHtml = `
+                <div id="customModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
+                    <div class="bg-gray-800 p-6 rounded-xl shadow-2xl max-w-sm w-full border-t-4 ${bgColor} transition duration-300 transform scale-100">
+                        <h3 class="text-2xl font-bold mb-3 text-white">${title}</h3>
+                        <p class="text-gray-300 mb-6">${message}</p>
+                        <button onclick="document.getElementById('customModal').remove()" class="w-full ${bgColor} hover:bg-opacity-80 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
+                            Entendido
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        // Initialize on load
+        window.onload = function () {
+            init();
+            updateUI(); 
+            document.getElementById('maxCapacity').value = maxCapacity;
+        }
 
     </script>
-
 </body>
 </html>
