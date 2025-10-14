@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Default Light Theme */
+            --bg-light: #fef7ff;
+            --surface-light: #fdf2f7;
+            --primary-light: #7d5260;
+            --on-primary-light: #ffffff;
+            --primary-container-light: #ffd8e4;
+            --on-primary-container-light: #31111d;
+            --secondary-container-light: #f7d8e2;
+            --on-secondary-container-light: #2b151d;
+            --tertiary-light: #7e5539;
+            --on-tertiary-light: #ffffff;
+            --tertiary-container-light: #ffdcc2;
+            --on-tertiary-container-light: #311300;
+            --text-light: #201a1b;
+            --text-secondary-light: #504346;
+            --outline-light: #837377;
+
+            /* Default Dark Theme */
+            --bg-dark: #201a1b;
+            --surface-dark: #2a2225;
+            --primary-dark: #efb8c8;
+            --on-primary-dark: #492532;
+            --primary-container-dark: #623b48;
+            --on-primary-container-dark: #ffd8e4;
+            --secondary-container-dark: #5b4149;
+            --on-secondary-container-dark: #f7d8e2;
+            --tertiary-dark: #f2bc9c;
+            --on-tertiary-dark: #4a280f;
+            --tertiary-container-dark: #643e23;
+            --on-tertiary-container-dark: #ffdcc2;
+            --text-dark: #ede0e1;
+            --text-secondary-dark: #d5c2c5;
+            --outline-dark: #9d8c90;
+        }
+        .light {
+            background-color: var(--bg-light);
+            color: var(--text-light);
+        }
+        .dark {
+            background-color: var(--bg-dark);
+            color: var(--text-dark);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.5s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        @keyframes halo-breath {
+            0% {
+                transform: scale(0.98);
+                opacity: 0.2;
+            }
+            50% {
+                transform: scale(1.02);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(0.98);
+                opacity: 0.2;
+            }
+        }
+        
+        #halo-effect {
+            transform-origin: 50% 50%;
+            opacity: 0;
+            transition: opacity 0.5s ease-out;
+        }
+
+        #halo-effect.is-animating {
+            animation: halo-breath 3s ease-in-out infinite;
+        }
+        
+        /* Color picker styles */
+        .color-picker-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .color-picker-wrapper input[type="color"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .color-picker-preview {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid var(--outline-light);
+        }
+        .dark .color-picker-preview {
+             border: 2px solid var(--outline-dark);
+        }
+    </style>
+</head>
+<body class="transition-colors duration-500">
+
+    <div id="app" class="flex flex-col items-center min-h-screen p-4 sm:p-6">
+        
+        <!-- Header -->
+        <header class="w-full max-w-md flex justify-between items-center">
+            <h1 class="text-lg font-bold text-[var(--primary-light)] dark:text-[var(--primary-dark)]">Pomodoro MD3</h1>
+            <div class="flex items-center gap-4">
+                 <button id="settings-btn" class="p-2 rounded-full hover:bg-[var(--primary-container-light)] dark:hover:bg-[var(--primary-container-dark)] transition-colors" aria-label="Abrir configuración">
+                    <svg class="w-6 h-6 text-[var(--primary-light)] dark:text-[var(--primary-dark)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </button>
+                <button id="theme-toggle" class="p-2 rounded-full hover:bg-[var(--primary-container-light)] dark:hover:bg-[var(--primary-container-dark)] transition-colors" aria-label="Cambiar tema">
+                    <svg id="theme-icon-light" class="w-6 h-6 text-[var(--primary-light)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    <svg id="theme-icon-dark" class="w-6 h-6 text-[var(--primary-dark)] hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                </button>
+            </div>
+        </header>
+
+        <main class="w-full max-w-sm sm:max-w-md flex flex-col items-center flex-grow justify-center">
+            
+            <!-- Tabs de modo -->
+            <div id="mode-tabs" class="p-1 rounded-full flex items-center space-x-1 bg-[var(--secondary-container-light)] dark:bg-[var(--secondary-container-dark)] mb-8">
+                <button data-mode="pomodoro" class="mode-btn px-4 py-2 text-sm font-semibold rounded-full">Pomodoro</button>
+                <button data-mode="shortBreak" class="mode-btn px-4 py-2 text-sm font-semibold rounded-full">Descanso Corto</button>
+                <button data-mode="longBreak" class="mode-btn px-4 py-2 text-sm font-semibold rounded-full">Descanso Largo</button>
+            </div>
+
+            <!-- Timer Display -->
+            <div class="relative w-64 h-64 sm:w-80 sm:h-80 flex items-center justify-center">
+                <svg class="absolute w-full h-full" viewBox="0 0 256 256">
+                    <circle id="halo-effect" class="text-[var(--primary-light)] dark:text-[var(--primary-dark)]" stroke-width="4" stroke="currentColor" fill="transparent" r="124" cx="128" cy="128" style="transform-origin: 50% 50%;" />
+                    <circle class="text-[var(--primary-container-light)] dark:text-[var(--primary-container-dark)]" stroke-width="12" stroke="currentColor" fill="transparent" r="114" cx="128" cy="128" />
+                    <circle id="progress-ring" class="progress-ring-circle text-[var(--primary-light)] dark:text-[var(--primary-dark)]" stroke-width="12" stroke-linecap="round" stroke="currentColor" fill="transparent" r="114" cx="128" cy="128" />
+                </svg>
+                <div class="flex flex-col items-center">
+                    <span id="time-display" class="text-5xl sm:text-7xl font-bold tracking-tighter text-[var(--text-light)] dark:text-[var(--text-dark)]">25:00</span>
+                    <span id="pomodoro-count" class="mt-2 text-sm font-medium text-[var(--text-secondary-light)] dark:text-[var(--text-secondary-dark)]">Pomodoros completados: 0</span>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="mt-8 flex items-center space-x-4">
+                <button id="reset-btn" class="p-4 rounded-full bg-[var(--tertiary-container-light)] dark:bg-[var(--tertiary-container-dark)] text-[var(--on-tertiary-container-light)] dark:text-[var(--on-tertiary-container-dark)] hover:opacity-90 transition-opacity" aria-label="Reiniciar temporizador">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 9a9 9 0 0115-3.87m-1.13 11.87A9 9 0 015 15"></path></svg>
+                </button>
+                <button id="start-pause-btn" class="px-10 py-4 text-lg font-bold rounded-full bg-[var(--primary-light)] dark:bg-[var(--primary-dark)] text-[var(--on-primary-light)] dark:text-[var(--on-primary-dark)] shadow-lg hover:opacity-90 transition-all duration-300">
+                    INICIAR
+                </button>
+                <button id="skip-btn" class="p-4 rounded-full bg-[var(--tertiary-container-light)] dark:bg-[var(--tertiary-container-dark)] text-[var(--on-tertiary-container-light)] dark:text-[var(--on-tertiary-container-dark)] hover:opacity-90 transition-opacity" aria-label="Saltar sesión">
+                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none overflow-y-auto">
+        <div id="settings-card" class="bg-[var(--surface-light)] dark:bg-[var(--surface-dark)] w-full max-w-md p-6 rounded-3xl shadow-2xl transform scale-95 transition-all duration-300 my-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-[var(--text-light)] dark:text-[var(--text-dark)]">Configuración</h2>
+                <button id="close-settings-btn" class="p-2 rounded-full hover:bg-[var(--secondary-container-light)] dark:hover:bg-[var(--secondary-container-dark)] transition-colors" aria-label="Cerrar configuración">
+                    <svg class="w-6 h-6 text-[var(--text-secondary-light)] dark:text-[var(--text-secondary-dark)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <form id="settings-form">
+                <div class="space-y-6">
+                    <h3 class="text-lg font-semibold border-b border-[var(--outline-light)] dark:border-[var(--outline-dark)] pb-2">Tiempos</h3>
+                    <div>
+                        <label for="pomodoro-duration" class="block text-sm font-medium text-[var(--text-secondary-light)] dark:text-[var(--text-secondary-dark)] mb-1">Duración Pomodoro (minutos)</label>
+                        <input type="number" id="pomodoro-duration" class="w-full p-3 rounded-lg bg-[var(--secondary-container-light)] dark:bg-[var(--secondary-container-dark)] border border-[var(--outline-light)] dark:border-[var(--outline-dark)] focus:ring-2 focus:ring-[var(--primary-light)] dark:focus:ring-[var(--primary-dark)] outline-none transition-shadow">
+                    </div>
+                     <div>
+                        <label for="short-break-duration" class="block text-sm font-medium text-[var(--text-secondary-light)] dark:text-[var(--text-secondary-dark)] mb-1">Descanso Corto (minutos)</label>
+                        <input type="number" id="short-break-duration" class="w-full p-3 rounded-lg bg-[var(--secondary-container-light)] dark:bg-[var(--secondary-container-dark)] border border-[var(--outline-light)] dark:border-[var(--outline-dark)] focus:ring-2 focus:ring-[var(--primary-light)] dark:focus:ring-[var(--primary-dark)] outline-none transition-shadow">
+                    </div>
+                     <div>
+                        <label for="long-break-duration" class="block text-sm font-medium text-[var(--text-secondary-light)] dark:text-[var(--text-secondary-dark)] mb-1">Descanso Largo (minutos)</label>
+                        <input type="number" id="long-break-duration" class="w-full p-3 rounded-lg bg-[var(--secondary-container-light)] dark:bg-[var(--secondary-container-dark)] border border-[var(--outline-light)] dark:border-[var(--outline-dark)] focus:ring-2 focus:ring-[var(--primary-light)] dark:focus:ring-[var(--primary-dark)] outline-none transition-shadow">
+                    </div>
+                    <div>
+                        <label for="long-break-interval" class="block text-sm font-medium text-[var(--text-secondary-light)] dark:text-[var(--text-secondary-dark)] mb-1">Pomodoros para descanso largo</label>
+                        <input type="number" id="long-break-interval" class="w-full p-3 rounded-lg bg-[var(--secondary-container-light)] dark:bg-[var(--secondary-container-dark)] border border-[var(--outline-light)] dark:border-[var(--outline-dark)] focus:ring-2 focus:ring-[var(--primary-light)] dark:focus:ring-[var(--primary-dark)] outline-none transition-shadow">
+                    </div>
+                    <div class="flex items-center justify-between pt-2">
+                        <span class="text-sm font-medium text-[var(--text-secondary-light)] dark:text-[var(--text-secondary-dark)]">Inicio automático</span>
+                        <label for="auto-start-toggle" class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="auto-start-toggle" class="sr-only peer">
+                            <div class="w-11 h-6 bg-[var(--secondary-container-light)] dark:bg-[var(--secondary-container-dark)] rounded-full peer peer-focus:ring-4 peer-focus:ring-[var(--primary-light)] dark:peer-focus:ring-[var(--primary-dark)] peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--primary-light)] dark:peer-checked:bg-[var(--primary-dark)]"></div>
+                        </label>
+                    </div>
+
+                    <h3 class="text-lg font-semibold border-b border-[var(--outline-light)] dark:border-[var(--outline-dark)] pb-2 pt-4">Apariencia</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="color-picker-wrapper">
+                             <div class="color-picker-preview" id="primary-light-preview"></div>
+                             <label for="primary-light-color" class="text-sm font-medium text-[var(--text-secondary-light)] dark:text-[var(--text-secondary-dark)]">Primario (Claro)</label>
+                             <input type="color" id="primary-light-color">
+                        </div>
+                        <div class="color-picker-wrapper">
+                             <div class="color-picker-preview" id="primary-dark-preview"></div>
+                             <label for="primary-dark-color" class="text-sm font-medium text-[var(--text-secondary-light)] dark:text-[var(--text-secondary-dark)]">Primario (Oscuro)</label>
+                             <input type="color" id="primary-dark-color">
+                        </div>
+                        <div class="color-picker-wrapper">
+                             <div class="color-picker-preview" id="tertiary-light-preview"></div>
+                             <label for="tertiary-light-color" class="text-sm font-medium text-[var(--text-secondary-light)] dark:text-[var(--text-secondary-dark)]">Acento (Claro)</label>
+                             <input type="color" id="tertiary-light-color">
+                        </div>
+                        <div class="color-picker-wrapper">
+                             <div class="color-picker-preview" id="tertiary-dark-preview"></div>
+                             <label for="tertiary-dark-color" class="text-sm font-medium text-[var(--text-secondary-light)] dark:text-[var(--text-secondary-dark)]">Acento (Oscuro)</label>
+                             <input type="color" id="tertiary-dark-color">
+                        </div>
+                    </div>
+                     <button type="button" id="reset-colors-btn" class="w-full mt-2 px-4 py-2 text-sm font-bold rounded-full hover:bg-[var(--secondary-container-light)] dark:hover:bg-[var(--secondary-container-dark)] transition-colors border border-[var(--outline-light)] dark:border-[var(--outline-dark)]">Restablecer colores</button>
+                </div>
+
+                <div class="mt-8 flex justify-end">
+                    <button type="submit" class="px-6 py-3 font-bold rounded-full bg-[var(--tertiary-light)] dark:bg-[var(--tertiary-dark)] text-[var(--on-tertiary-light)] dark:text-[var(--on-tertiary-dark)] hover:opacity-90 transition-opacity">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none z-50">
+        <div id="confirm-card" class="bg-[var(--surface-light)] dark:bg-[var(--surface-dark)] w-full max-w-sm p-6 rounded-3xl shadow-2xl transform scale-95 transition-all duration-300">
+            <h3 class="text-lg font-bold text-[var(--text-light)] dark:text-[var(--text-dark)] mb-4">Confirmar Acción</h3>
+            <p id="confirm-message" class="text-sm text-[var(--text-secondary-light)] dark:text-[var(--text-secondary-dark)] mb-6">¿Estás seguro de que quieres cambiar? El progreso de la sesión actual se perderá.</p>
+            <div class="flex justify-end gap-4">
+                <button id="confirm-cancel-btn" class="px-4 py-2 text-sm font-bold rounded-full hover:bg-[var(--secondary-container-light)] dark:hover:bg-[var(--secondary-container-dark)] transition-colors">Cancelar</button>
+                <button id="confirm-ok-btn" class="px-4 py-2 text-sm font-bold rounded-full bg-[var(--tertiary-light)] dark:bg-[var(--tertiary-dark)] text-[var(--on-tertiary-light)] dark:text-[var(--on-tertiary-dark)] hover:opacity-90 transition-opacity">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const timeDisplay = document.getElementById('time-display');
+            const startPauseBtn = document.getElementById('start-pause-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const skipBtn = document.getElementById('skip-btn');
+            const pomodoroCountDisplay = document.getElementById('pomodoro-count');
+            const modeTabs = document.getElementById('mode-tabs');
+            const progressRing = document.getElementById('progress-ring');
+            const haloEffect = document.getElementById('halo-effect');
+            
+            const settingsBtn = document.getElementById('settings-btn');
+            const closeSettingsBtn = document.getElementById('close-settings-btn');
+            const settingsModal = document.getElementById('settings-modal');
+            const settingsCard = document.getElementById('settings-card');
+            const settingsForm = document.getElementById('settings-form');
+
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIconLight = document.getElementById('theme-icon-light');
+            const themeIconDark = document.getElementById('theme-icon-dark');
+            const htmlEl = document.documentElement;
+
+            const confirmModal = document.getElementById('confirm-modal');
+            const confirmCard = document.getElementById('confirm-card');
+            const confirmMessage = document.getElementById('confirm-message');
+            const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+            const confirmOkBtn = document.getElementById('confirm-ok-btn');
+
+            // --- Settings Elements ---
+            const pomodoroDurationInput = document.getElementById('pomodoro-duration');
+            const shortBreakDurationInput = document.getElementById('short-break-duration');
+            const longBreakDurationInput = document.getElementById('long-break-duration');
+            const longBreakIntervalInput = document.getElementById('long-break-interval');
+            const autoStartToggle = document.getElementById('auto-start-toggle');
+            
+            // --- Color Picker Elements ---
+            const primaryLightColorInput = document.getElementById('primary-light-color');
+            const primaryDarkColorInput = document.getElementById('primary-dark-color');
+            const tertiaryLightColorInput = document.getElementById('tertiary-light-color');
+            const tertiaryDarkColorInput = document.getElementById('tertiary-dark-color');
+            const primaryLightPreview = document.getElementById('primary-light-preview');
+            const primaryDarkPreview = document.getElementById('primary-dark-preview');
+            const tertiaryLightPreview = document.getElementById('tertiary-light-preview');
+            const tertiaryDarkPreview = document.getElementById('tertiary-dark-preview');
+            const resetColorsBtn = document.getElementById('reset-colors-btn');
+
+
+            // --- State ---
+            const defaultSettings = {
+                pomodoroDuration: 25,
+                shortBreakDuration: 5,
+                longBreakDuration: 15,
+                longBreakInterval: 4,
+                autoStart: false,
+                colors: {
+                    primaryLight: '#7d5260',
+                    primaryDark: '#efb8c8',
+                    tertiaryLight: '#7e5539',
+                    tertiaryDark: '#f2bc9c',
+                }
+            };
+            let settings = JSON.parse(JSON.stringify(defaultSettings));
+            
+            let timer;
+            let totalSeconds;
+            let secondsRemaining;
+            let currentMode = 'pomodoro';
+            let pomodorosCompleted = 0;
+            let isRunning = false;
+            let confirmResolve = null;
+            let isAudioContextStarted = false;
+            
+            // --- Audio ---
+            const synth = new Tone.Synth({
+                oscillator: { type: 'triangle' },
+                envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 }
+            }).toDestination();
+            
+            async function startAudioContext() {
+                if (!isAudioContextStarted && Tone.context.state !== 'running') {
+                    await Tone.start();
+                    console.log('AudioContext started!');
+                    isAudioContextStarted = true;
+                }
+            }
+            
+            // --- Color Manipulation ---
+            function hexToRgb(hex) {
+                let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : null;
+            }
+
+            function rgbToHex(r, g, b) {
+                return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).padStart(6, '0');
+            }
+
+            function pSBC(p, c0, c1, l) { // Tiny color manipulation function
+                let r, g, b, P, f, t, h, i = parseInt, m = Math.round, a = typeof (c1) == "string";
+                if (typeof (p) != "number" || p < -1 || p > 1 || typeof (c0) != "string" || (c0[0] != 'r' && c0[0] != '#') || (c1 && !a)) return null;
+                if (!this.pSBCr) this.pSBCr = (d) => {
+                    let n = d.length, x = {};
+                    if (n > 9) {
+                        [r, g, b, a] = d = d.split(","), n = d.length;
+                        if (n < 3 || n > 4) return null;
+                        x.r = i(r[3] == "a" ? r.slice(5) : r.slice(4)), x.g = i(g), x.b = i(b), x.a = a ? parseFloat(a) : -1
+                    } else {
+                        if (n == 8 || n == 6 || n < 4) return null;
+                        if (n < 6) d = "#" + d[1] + d[1] + d[2] + d[2] + d[3] + d[3] + (n > 4 ? d[4] + d[4] : "");
+                        d = i(d.slice(1), 16);
+                        if (n == 9 || n == 5) x.r = d >> 24 & 255, x.g = d >> 16 & 255, x.b = d >> 8 & 255, x.a = m((d & 255) / 0.255) / 1000;
+                        else x.r = d >> 16, x.g = d >> 8 & 255, x.b = d & 255, x.a = -1
+                    } return x
+                };
+                h = c0.length > 9, h = a ? c1.length > 9 ? true : c1 == "c" ? !h : false : h, f = this.pSBCr(c0), P = p < 0, t = c1 && c1 != "c" ? this.pSBCr(c1) : P ? { r: 0, g: 0, b: 0, a: -1 } : { r: 255, g: 255, b: 255, a: -1 }, p = P ? p * -1 : p, P = 1 - p;
+                if (!f || !t) return null;
+                if (l) r = m(P * f.r + p * t.r), g = m(P * f.g + p * t.g), b = m(P * f.b + p * t.b);
+                else r = m((P * f.r ** 2 + p * t.r ** 2) ** 0.5), g = m((P * f.g ** 2 + p * t.g ** 2) ** 0.5), b = m((P * f.b ** 2 + p * t.b ** 2) ** 0.5);
+                a = f.a, t = t.a, f = a >= 0 || t >= 0, a = f ? a < 0 ? t : t < 0 ? a : a * P + t * p : 0;
+                if (h) return "rgb" + (f ? "a(" : "(") + r + "," + g + "," + b + (f ? "," + m(a * 1000) / 1000 : "") + ")";
+                else return "#" + (4294967296 + r * 16777216 + g * 65536 + b * 256 + (f ? m(a * 255) : 0)).toString(16).slice(1, f ? undefined : -2)
+            }
+            
+            function isColorLight(hex) {
+                const rgb = hexToRgb(hex);
+                if (!rgb) return false;
+                const { r, g, b } = rgb;
+                const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                return luminance > 0.5;
+            }
+
+            function applyColors(colors) {
+                const root = document.documentElement;
+                
+                // Light theme
+                root.style.setProperty('--primary-light', colors.primaryLight);
+                root.style.setProperty('--on-primary-light', isColorLight(colors.primaryLight) ? '#000000' : '#FFFFFF');
+                root.style.setProperty('--primary-container-light', pSBC(0.8, colors.primaryLight, false, true));
+                root.style.setProperty('--on-primary-container-light', pSBC(-0.7, colors.primaryLight, false, true));
+                
+                root.style.setProperty('--tertiary-light', colors.tertiaryLight);
+                root.style.setProperty('--on-tertiary-light', isColorLight(colors.tertiaryLight) ? '#000000' : '#FFFFFF');
+                root.style.setProperty('--tertiary-container-light', pSBC(0.8, colors.tertiaryLight, false, true));
+                root.style.setProperty('--on-tertiary-container-light', pSBC(-0.7, colors.tertiaryLight, false, true));
+
+                // Dark theme
+                root.style.setProperty('--primary-dark', colors.primaryDark);
+                root.style.setProperty('--on-primary-dark', isColorLight(colors.primaryDark) ? '#000000' : '#FFFFFF');
+                root.style.setProperty('--primary-container-dark', pSBC(-0.6, colors.primaryDark, false, true));
+                root.style.setProperty('--on-primary-container-dark', pSBC(0.8, colors.primaryDark, false, true));
+
+                root.style.setProperty('--tertiary-dark', colors.tertiaryDark);
+                root.style.setProperty('--on-tertiary-dark', isColorLight(colors.tertiaryDark) ? '#000000' : '#FFFFFF');
+                root.style.setProperty('--tertiary-container-dark', pSBC(-0.6, colors.tertiaryDark, false, true));
+                root.style.setProperty('--on-tertiary-container-dark', pSBC(0.8, colors.tertiaryDark, false, true));
+
+                // Update color pickers UI
+                primaryLightColorInput.value = colors.primaryLight;
+                primaryDarkColorInput.value = colors.primaryDark;
+                tertiaryLightColorInput.value = colors.tertiaryLight;
+                tertiaryDarkColorInput.value = colors.tertiaryDark;
+                primaryLightPreview.style.backgroundColor = colors.primaryLight;
+                primaryDarkPreview.style.backgroundColor = colors.primaryDark;
+                tertiaryLightPreview.style.backgroundColor = colors.tertiaryLight;
+                tertiaryDarkPreview.style.backgroundColor = colors.tertiaryDark;
+            }
+
+            // --- Progress Ring ---
+            const radius = progressRing.r.baseVal.value;
+            const circumference = 2 * Math.PI * radius;
+            progressRing.style.strokeDasharray = `${circumference} ${circumference}`;
+            progressRing.style.strokeDashoffset = circumference;
+            
+            function setProgress(percent) {
+                const offset = circumference - (percent / 100) * circumference;
+                progressRing.style.strokeDashoffset = offset;
+            }
+            
+            // --- Timer Logic ---
+            function updateDisplay() {
+                const minutes = Math.floor(secondsRemaining / 60);
+                const seconds = secondsRemaining % 60;
+                const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                timeDisplay.textContent = formattedTime;
+                document.title = `${formattedTime} - ${currentMode === 'pomodoro' ? 'Pomodoro' : 'Descanso'}`;
+                const progressPercent = ((totalSeconds - secondsRemaining) / totalSeconds) * 100;
+                setProgress(progressPercent);
+            }
+
+            function startTimer() {
+                if (isRunning) return;
+                isRunning = true;
+                startPauseBtn.textContent = 'PAUSAR';
+                haloEffect.classList.add('is-animating');
+                timer = setInterval(() => {
+                    secondsRemaining--;
+                    updateDisplay();
+                    if (secondsRemaining <= 0) {
+                        clearInterval(timer);
+                        finishSession();
+                    }
+                }, 1000);
+            }
+
+            function pauseTimer() {
+                if (!isRunning) return;
+                isRunning = false;
+                startPauseBtn.textContent = 'REANUDAR';
+                haloEffect.classList.remove('is-animating');
+                clearInterval(timer);
+            }
+
+            function resetTimer() {
+                clearInterval(timer);
+                isRunning = false;
+                haloEffect.classList.remove('is-animating');
+                initMode(currentMode);
+                startPauseBtn.textContent = 'INICIAR';
+            }
+
+            function finishSession() {
+                synth.triggerAttackRelease('C5', '0.5');
+                
+                if (currentMode === 'pomodoro') {
+                    pomodorosCompleted++;
+                    pomodoroCountDisplay.textContent = `Pomodoros completados: ${pomodorosCompleted}`;
+                    if (pomodorosCompleted > 0 && pomodorosCompleted % settings.longBreakInterval === 0) {
+                        switchMode('longBreak');
+                    } else {
+                        switchMode('shortBreak');
+                    }
+                } else {
+                    switchMode('pomodoro');
+                }
+                
+                if (settings.autoStart) {
+                    startTimer();
+                } else {
+                    isRunning = false;
+                    startPauseBtn.textContent = 'INICIAR';
+                    haloEffect.classList.remove('is-animating');
+                }
+            }
+
+            // --- Mode Switching ---
+            function initMode(mode) {
+                currentMode = mode;
+                let duration;
+                switch(mode) {
+                    case 'pomodoro':
+                        duration = settings.pomodoroDuration;
+                        break;
+                    case 'shortBreak':
+                        duration = settings.shortBreakDuration;
+                        break;
+                    case 'longBreak':
+                        duration = settings.longBreakDuration;
+                        break;
+                }
+                totalSeconds = duration * 60;
+                secondsRemaining = totalSeconds;
+                updateDisplay();
+                updateActiveTab();
+            }
+
+            function switchMode(mode) {
+                clearInterval(timer);
+                initMode(mode);
+            }
+
+            function updateActiveTab() {
+                const lightClasses = ['bg-[var(--primary-light)]', 'text-[var(--on-primary-light)]'];
+                const darkClasses = ['dark:bg-[var(--primary-dark)]', 'dark:text-[var(--on-primary-dark)]'];
+                const inactiveClasses = ['text-[var(--on-secondary-container-light)]', 'dark:text-[var(--on-secondary-container-dark)]'];
+
+                document.querySelectorAll('.mode-btn').forEach(btn => {
+                    btn.classList.remove(...lightClasses, ...darkClasses, ...inactiveClasses);
+                    if (btn.dataset.mode === currentMode) {
+                        btn.classList.add(...lightClasses, ...darkClasses);
+                    } else {
+                        btn.classList.add(...inactiveClasses);
+                    }
+                });
+            }
+
+            // --- Event Listeners ---
+            startPauseBtn.addEventListener('click', () => {
+                startAudioContext();
+                if (isRunning) {
+                    pauseTimer();
+                } else {
+                    startTimer();
+                }
+            });
+            
+            resetBtn.addEventListener('click', resetTimer);
+            
+            skipBtn.addEventListener('click', () => {
+                finishSession();
+                pauseTimer(); // Ensure it doesn't auto-start if autoStart is off
+            });
+
+            modeTabs.addEventListener('click', async e => {
+                if (e.target.classList.contains('mode-btn')) {
+                    const mode = e.target.dataset.mode;
+                    if (mode !== currentMode) {
+                        if (isRunning) {
+                           const confirmed = await showConfirm("¿Estás seguro de que quieres cambiar? El progreso de la sesión actual se perderá.");
+                           if (confirmed) {
+                                switchMode(mode);
+                                pauseTimer();
+                            }
+                        } else {
+                           switchMode(mode);
+                        }
+                    }
+                }
+            });
+
+            // --- Settings & Modals ---
+            function loadSettings() {
+                const savedSettings = localStorage.getItem('pomodoroSettings');
+                if (savedSettings) {
+                    const parsed = JSON.parse(savedSettings);
+                    // Deep merge to handle nested objects like 'colors'
+                    settings = {
+                        ...defaultSettings,
+                        ...parsed,
+                        colors: {
+                            ...defaultSettings.colors,
+                            ...(parsed.colors || {})
+                        }
+                    };
+                } else {
+                    settings = JSON.parse(JSON.stringify(defaultSettings));
+                }
+                
+                pomodoroDurationInput.value = settings.pomodoroDuration;
+                shortBreakDurationInput.value = settings.shortBreakDuration;
+                longBreakDurationInput.value = settings.longBreakDuration;
+                longBreakIntervalInput.value = settings.longBreakInterval;
+                autoStartToggle.checked = settings.autoStart;
+                applyColors(settings.colors);
+            }
+
+            function saveSettings() {
+                settings.pomodoroDuration = parseInt(pomodoroDurationInput.value, 10) || 25;
+                settings.shortBreakDuration = parseInt(shortBreakDurationInput.value, 10) || 5;
+                settings.longBreakDuration = parseInt(longBreakDurationInput.value, 10) || 15;
+                settings.longBreakInterval = parseInt(longBreakIntervalInput.value, 10) || 4;
+                settings.autoStart = autoStartToggle.checked;
+                
+                settings.colors.primaryLight = primaryLightColorInput.value;
+                settings.colors.primaryDark = primaryDarkColorInput.value;
+                settings.colors.tertiaryLight = tertiaryLightColorInput.value;
+                settings.colors.tertiaryDark = tertiaryDarkColorInput.value;
+                
+                localStorage.setItem('pomodoroSettings', JSON.stringify(settings));
+            }
+            
+            settingsForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                saveSettings();
+                closeSettingsModal(false); // Pass false to prevent reverting saved changes
+                if (!isRunning) {
+                   initMode(currentMode); // Re-initialize with new settings if not running
+                }
+                 updateActiveTab(); // Refresh tab colors with new theme
+            });
+            
+            // Live color preview
+            [primaryLightColorInput, primaryDarkColorInput, tertiaryLightColorInput, tertiaryDarkColorInput].forEach(input => {
+                input.addEventListener('input', () => {
+                    const currentColors = {
+                        primaryLight: primaryLightColorInput.value,
+                        primaryDark: primaryDarkColorInput.value,
+                        tertiaryLight: tertiaryLightColorInput.value,
+                        tertiaryDark: tertiaryDarkColorInput.value,
+                    };
+                    applyColors(currentColors);
+                });
+            });
+
+            resetColorsBtn.addEventListener('click', () => {
+                const newColors = JSON.parse(JSON.stringify(defaultSettings.colors));
+                applyColors(newColors);
+            });
+
+            function openSettingsModal() {
+                loadSettings(); // Ensure modal opens with currently saved settings
+                settingsModal.classList.remove('opacity-0', 'pointer-events-none');
+                settingsCard.classList.remove('scale-95');
+            }
+            
+            function closeSettingsModal(revertChanges = true) {
+                if (revertChanges) {
+                    loadSettings(); // Revert any unsaved color changes on close
+                }
+                settingsModal.classList.add('opacity-0', 'pointer-events-none');
+                settingsCard.classList.add('scale-95');
+            }
+            
+            settingsBtn.addEventListener('click', openSettingsModal);
+            closeSettingsBtn.addEventListener('click', () => closeSettingsModal(true));
+            settingsModal.addEventListener('click', (e) => {
+                if(e.target === settingsModal) {
+                    closeSettingsModal(true);
+                }
+            });
+
+            // Confirmation Modal Logic
+            function showConfirm(message) {
+                confirmMessage.textContent = message;
+                confirmModal.classList.remove('opacity-0', 'pointer-events-none');
+                confirmCard.classList.remove('scale-95');
+                
+                return new Promise(resolve => {
+                    confirmResolve = resolve;
+                });
+            }
+
+            function handleConfirm(result) {
+                if (confirmResolve) {
+                    confirmModal.classList.add('opacity-0', 'pointer-events-none');
+                    confirmCard.classList.add('scale-95');
+                    confirmResolve(result);
+                    confirmResolve = null;
+                }
+            }
+
+            confirmOkBtn.addEventListener('click', () => handleConfirm(true));
+            confirmCancelBtn.addEventListener('click', () => handleConfirm(false));
+            confirmModal.addEventListener('click', (e) => {
+                if (e.target === confirmModal) {
+                    handleConfirm(false);
+                }
+            });
+
+
+            // --- Theme ---
+            function applyTheme(theme) {
+                if (theme === 'dark') {
+                    htmlEl.classList.add('dark');
+                    htmlEl.classList.remove('light');
+                    themeIconLight.classList.add('hidden');
+                    themeIconDark.classList.remove('hidden');
+                } else {
+                    htmlEl.classList.remove('dark');
+                    htmlEl.classList.add('light');
+                    themeIconLight.classList.remove('hidden');
+                    themeIconDark.classList.add('hidden');
+                }
+            }
+            
+            themeToggle.addEventListener('click', () => {
+                const newTheme = htmlEl.classList.contains('dark') ? 'light' : 'dark';
+                localStorage.setItem('pomodoroTheme', newTheme);
+                applyTheme(newTheme);
+            });
+
+
+            // --- Initialization ---
+            function init() {
+                const savedTheme = localStorage.getItem('pomodoroTheme') || 'light';
+                applyTheme(savedTheme);
+                loadSettings();
+                initMode('pomodoro');
+            }
+
+            init();
+        });
+    </script>
+</body>
+</html>
+
+
