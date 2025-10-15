@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caso de Estudio: Creando una App Pomodoro con IA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /*
+         * Paleta de colores y estilos inspirados en Material Design 3.
+         * Usamos variables CSS para mantener la consistencia y facilitar
+         * futuros cambios, un principio clave de los sistemas de diseño.
+        */
+        :root {
+            --color-primary-container: #eaddff;
+            --color-on-primary-container: #21005d;
+            --color-secondary-container: #f9dedc;
+            --color-on-secondary-container: #410e0b;
+            --color-tertiary-container: #d6e6ff;
+            --color-on-tertiary-container: #001d36;
+
+            --color-surface: #fdf7ff;
+            --color-surface-container-high: #f3edf7;
+            --color-on-surface: #1d1b20;
+            --color-on-surface-variant: #49454f;
+            --color-outline: #79747e;
+        }
+
+        /* --- Reseteo y Estilos Base --- */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-surface);
+            color: var(--color-on-surface);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* --- Contenedor Principal --- */
+        .container {
+            width: 100%;
+            max-width: 56rem; /* 896px */
+            margin-left: auto;
+            margin-right: auto;
+            padding: 3rem 1rem;
+        }
+
+        /* --- Tipografía --- */
+        h1 {
+            font-size: 2.25rem; /* 36px */
+            line-height: 2.5rem; /* 40px */
+            font-weight: 700;
+            color: var(--color-on-surface);
+            margin-bottom: 1rem;
+        }
+        h2 {
+            font-size: 1.5rem; /* 24px */
+            font-weight: 700;
+            margin: 0 0 1rem 0;
+        }
+        h3 {
+            font-size: 1.25rem; /* 20px */
+            font-weight: 600;
+            color: var(--color-on-surface);
+            margin: 0 0 0.75rem 0;
+        }
+        p {
+            line-height: 1.625;
+            color: var(--color-on-surface-variant);
+            margin: 0;
+        }
+        ul {
+            list-style: disc;
+            padding-left: 1.25rem;
+            margin: 1rem 0 0 0;
+        }
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* --- Estructura y Espaciado --- */
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        header p {
+            max-width: 42rem;
+            margin: 0 auto;
+            font-size: 1.125rem; /* 18px */
+        }
+        main > section + div {
+             margin-top: 2.5rem;
+        }
+        .space-y-8 > article + article {
+            margin-top: 2rem;
+        }
+        footer {
+            text-align: center;
+            margin-top: 5rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(121, 116, 126, 0.2);
+        }
+        footer p {
+            font-size: 0.875rem; /* 14px */
+        }
+        
+        /* --- Componentes Personalizados (M3 Style) --- */
+        .summary-section {
+            background-color: var(--color-surface-container-high);
+            padding: 2rem;
+            border-radius: 1.5rem; /* 24px */
+        }
+        .summary-section h2 {
+            color: var(--color-on-primary-container);
+        }
+
+        .m3-card {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 1.5rem; /* 24px */
+            border: 1px solid rgba(203, 213, 225, 0.8);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+            transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+            display: flex;
+            align-items: flex-start;
+            gap: 1.25rem;
+            position: relative;
+            overflow: hidden; /* para el efecto ripple */
+        }
+        .m3-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        }
+        .icon-container {
+            flex-shrink: 0;
+            width: 3rem;  /* 48px */
+            height: 3rem; /* 48px */
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .icon-container svg {
+            width: 1.5rem; /* 24px */
+            height: 1.5rem; /* 24px */
+        }
+        
+        /* Colores específicos de los iconos */
+        .icon-container.primary { background-color: var(--color-primary-container); color: var(--color-on-primary-container); }
+        .icon-container.secondary { background-color: var(--color-secondary-container); color: var(--color-on-secondary-container); }
+        .icon-container.tertiary { background-color: var(--color-tertiary-container); color: var(--color-on-tertiary-container); }
+        
+        /* Efecto Ripple (JS) */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.1);
+            transform: scale(0);
+            animation: ripple-effect 0.6s linear;
+        }
+        @keyframes ripple-effect {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* --- Media Queries para Responsividad --- */
+        @media (min-width: 768px) {
+            .container {
+                padding-top: 5rem;
+                padding-bottom: 5rem;
+            }
+            h1 {
+                font-size: 3rem; /* 48px */
+                line-height: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <header>
+            <h1>Desarrollo de la App Pomodoro</h1>
+            <p>Caso de estudio sobre el proceso de creación de un Pomodoro con Gemini.</p>
+        </header>
+
+        <main>
+            <section class="summary-section">
+                <h2>Resumen del Desarrollo</h2>
+                <p>
+                    El objetivo del proyecto era crear una aplicación de Pomodoro. En mi caso opté por seguir las guías de Material Design 3, con la premisa de que fuera profesional y totalmente configurable por el usuario. El proceso se basó en la creación de la aplicación con la IA, refinando el producto paso a paso.
+                </p>
+            </section>
+
+            <div class="space-y-8">
+                <article class="m3-card">
+                    <div class="icon-container primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 16V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2z"/><path d="M12 11a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="m16 9-4.3 4.3a1 1 0 0 1-1.4 0L8 11"/><path d="M18 19v1a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1"/></svg>
+                    </div>
+                    <div>
+                        <h3>Fase 1: Prototipo Inicial y Correcciones Visuales</h3>
+                        <p>Se partió de una primera versión generada por la IA, detectando fallos de maquetación (UI) que necesitaban atención:</p>
+                        <ul>
+                            <li>El <strong>círculo de progreso</strong> no se renderizaba correctamente alrededor del temporizador.</li>
+                            <li>La <strong>pantalla de configuración</strong> tenía un fondo transparente que rompía la interfaz.</li>
+                        </ul>
+                        <p style="margin-top: 1rem;">Se solicitó también una <strong>animación de ondulación</strong> para mejorar el feedback visual, siempre bajo los principios de M3.</p>
+                    </div>
+                </article>
+
+                <article class="m3-card">
+                    <div class="icon-container secondary">
+                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M12 9v4"/><path d="m14.5 11.5-5-5"/><path d="m9.5 11.5 5-5"/></svg>
+                    </div>
+                    <div>
+                        <h3>Fase 2: Funcionalidades Desechadas</h3>
+
+                        <p>Se propuso añadir música de fondo, pero su implementación resultó fallida. Tras varios intentos, se tomó la decisión estratégica de <strong>eliminar la característica</strong> para no complicar el desarrollo, garantizando así la estabilidad de las funciones principales.</p>
+                    </div>
+                </article>
+
+                <article class="m3-card">
+                    <div class="icon-container tertiary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.37 2.63 14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z"/><path d="M9 8c-2 3-4 3.5-7 4l8 8c.5-3 1-5 4-7"/><path d="M14.5 17.5 4.5 7.5"/></svg>
+                    </div>
+                    <div>
+                        <h3>Fase 3: Personalización</h3>
+
+                        <p>Finalmente, se implementó con éxito la personalización de colores de la interfaz. La IA añadió la pantalla de configuración para seleccionar y guardar una paleta, cumpliendo el requisito de una app <strong>totalmente configurable</strong> por el usuario.</p>
+                    </div>
+                </article>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Blog de Desarrollo. Todos los derechos reservados.</p>
+        </footer>
+
+    </div>
+
+    <script>
+        // Script para el efecto "ripple" de Material Design en las tarjetas
+        document.querySelectorAll('.m3-card').forEach(card => {
+            card.addEventListener('click', function (e) {
+                // Prevenir múltiples ripples si se hace clic rápido
+                const existingRipple = card.querySelector(".ripple");
+                if (existingRipple) {
+                    existingRipple.remove();
+                }
+
+                const cardRect = card.getBoundingClientRect();
+                const circle = document.createElement('span');
+                const diameter = Math.max(card.clientWidth, card.clientHeight);
+                const radius = diameter / 2;
+
+                circle.style.width = circle.style.height = `${diameter}px`;
+                circle.style.left = `${e.clientX - cardRect.left - radius}px`;
+                circle.style.top = `${e.clientY - cardRect.top - radius}px`;
+                circle.classList.add('ripple');
+                
+                card.appendChild(circle);
+
+                // Limpiar el span después de la animación
+                setTimeout(() => {
+                    circle.remove();
+                }, 600);
+            });
+        });
+    </script>
+</body>
+</html>
+
