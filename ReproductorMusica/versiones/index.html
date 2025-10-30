@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de versiones asistidas por IA</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            --bg: #f1f5f9;
+            --surface: #ffffff;
+            --border: rgba(15, 23, 42, 0.08);
+            --text: #0f172a;
+            --muted: #475569;
+            --accent: #2563eb;
+            font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f172a;
+                --surface: #111827;
+                --border: rgba(148, 163, 184, 0.2);
+                --text: #e2e8f0;
+                --muted: #cbd5f5;
+                --accent: #60a5fa;
+            }
+        }
+        body {
+            margin: 0;
+            background: radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 40%), var(--bg);
+            color: var(--text);
+        }
+        header {
+            padding: 3rem 1.5rem 2rem;
+            text-align: center;
+        }
+        header h1 {
+            margin: 0 0 0.75rem;
+            font-size: clamp(2rem, 4vw, 2.8rem);
+        }
+        header p {
+            max-width: 60ch;
+            margin: 0 auto;
+            color: var(--muted);
+        }
+        main {
+            max-width: 960px;
+            margin: 0 auto 4rem;
+            padding: 0 1.5rem;
+            display: grid;
+            gap: 1.5rem;
+        }
+        section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.75rem;
+            box-shadow: 0 20px 40px -40px rgba(15, 23, 42, 0.55);
+            display: grid;
+            gap: 1.1rem;
+        }
+        .version-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem 1.5rem;
+            font-size: 0.95rem;
+        }
+        .badge {
+            background: rgba(37, 99, 235, 0.12);
+            color: var(--accent);
+            font-weight: 600;
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+        }
+        .prompt {
+            background: rgba(15, 23, 42, 0.05);
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            border: 1px solid rgba(15, 23, 42, 0.05);
+            font-family: "Fira Code", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+        footer {
+            text-align: center;
+            padding: 2rem 1.5rem 3rem;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+        @media (max-width: 640px) {
+            section {
+                padding: 1.4rem;
+            }
+            .prompt {
+                font-size: 0.88rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Proceso de Resolución</h1>
+        <p>Registro de las iteraciones principales del reproductor multimedia, incluyendo la IA utilizada, el prompt suministrado y la versión entregada tras cada interacción.</p>
+    </header>
+    <main>
+        <section>
+            <div class="version-meta">
+                <span class="badge">Versión v0.1.0</span>
+                <span><strong>IA:</strong> Gemini Pro</span>
+            </div>
+            <div>
+                <h2>Prototipo base del reproductor</h2>
+                <p>Primera entrega de la interfaz principal con controles de reproducción, barra de progreso y diseño inspirado en MD3 utilizando Tailwind CDN.</p>
+            </div>
+            <div>
+                <h3>Prompt enviado a Gemini</h3>
+                <p class="prompt">"Necesito un reproductor de música web minimalista usando Tailwind desde CDN.
+                Debe tener header, cola lateral plegable y footer con controles play/pause y barra de progreso.
+                Usa placeholders para carátula y texto, e incluye fuentes de Google estilo Inter."</p>
+            </div>
+        </section>
+        <section>
+            <div class="version-meta">
+                <span class="badge">Versión v0.2.0</span>
+                <span><strong>IA:</strong> Gemini Pro</span>
+            </div>
+            <div>
+                <h2>Biblioteca inteligente con metadatos</h2>
+                <p>Se incorpora carga masiva de carpetas, lectura de etiquetas ID3 y navegación por canciones, álbumes, artistas y listas personalizadas.</p>
+            </div>
+            <div>
+                <h3>Prompt enviado a Gemini</h3>
+                <p class="prompt">"Extiende el reproductor existente para importar carpetas locales con webkitdirectory.
+                Mapea canciones, álbumes y artistas en estructuras JavaScript y genera vistas filtradas.
+                Integra jsmediatags para leer título, artista, álbum y portada de cada archivo de audio."</p>
+            </div>
+        </section>
+        <section>
+            <div class="version-meta">
+                <span class="badge">Versión v0.3.0</span>
+                <span><strong>IA:</strong> Gemini Pro</span>
+            </div>
+            <div>
+                <h2>Experiencia multimedia y karaoke</h2>
+                <p>La aplicación se amplía para soportar vídeos, visor de imágenes y modo karaoke con sincronización de letras y control remoto mediante Presentation API.</p>
+            </div>
+            <div>
+                <h3>Prompt enviado a Gemini</h3>
+                <p class="prompt">"Añade soporte multimedia completo al reproductor.
+Quiero un modal para vídeo, otro para imágenes, y un modo karaoke con letras sincronizadas línea por línea.
+Permite controlar la cola con drag and drop usando SortableJS y agrega compatibilidad con Presentation API."</p>
+            </div>
+        </section>
+        <section>
+            <div class="version-meta">
+                <span class="badge">Versión v0.4.0</span>
+                <span><strong>IA:</strong> Gemini Pro</span>
+            </div>
+            <div>
+                <h2>Refactor modular y PWA</h2>
+                <p>Separación en archivos <code>index.html</code>, <code>styles.css</code> y <code>app.js</code>, vista Now Playing con color dinámico, selector de temas y configuración PWA autogenerada.</p>
+            </div>
+            <div>
+                <h3>Prompt enviado a Gemini</h3>
+                <p class="prompt">"Refactoriza el proyecto dividiendo HTML, CSS y JS.
+                Crea una vista 'Now Playing' a pantalla completa con fondo dinámico extraído de la carátula usando ColorThief.
+                Implementa selector de tema claro/oscuro/sistema, calendario con eventos y genera manifest + Service Worker en runtime."</p>
+            </div>
+        </section>
+    </main>
+    <footer>
+        Documento generado para el módulo DI · Última actualización aproximada: 30 de octubre de 2025.
+    </footer>
+</body>
+</html>
